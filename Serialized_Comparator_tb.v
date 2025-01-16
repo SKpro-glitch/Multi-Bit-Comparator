@@ -12,7 +12,7 @@ module Serialized_Comparator_tb();
     reg [n:0] a, b;
     wire less_than, equal_to, greater_than;
     
-    Multi_Bit_Comparator #(n) compare (
+    Multi_Bit_Comparator_Serialized #(n) compare (
     .clk(clk),
     .reset(reset),
     .a_in(a), .b_in(b),
