@@ -22,4 +22,4 @@
 </br> </br>
 **Single Bit Comparator with Power Gating:**
 </br>
-![image](https://github.com/user-attachments/assets/abf0d67b-83b3-486e-9cf6-633de37e05aa)
+![image](https://github.com/user-attachments/assets/ba54a9f9-df3f-4b8d-9bd7-729253db7038)
