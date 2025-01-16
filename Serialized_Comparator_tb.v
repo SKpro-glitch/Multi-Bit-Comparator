@@ -24,11 +24,16 @@ module Serialized_Comparator_tb();
     always #10 clk = ~clk;
     
     initial begin
+        //The reset signal needs to be made 1 then 0 after the duration of at least 1 clock cycle
         #1  reset = 1;        
         #10  reset = 0;        
         a = 4'ha; 
         b = 4'hb;
-                
+        //The circuit nees to be reset before each change in input
+        #100  reset = 1;        
+        #10  reset = 0;        
+        a = 4'h8; 
+        b = 4'h8;
      end
     
 endmodule
