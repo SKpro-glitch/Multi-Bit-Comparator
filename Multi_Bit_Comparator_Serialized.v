@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 
-module Multi_Bit_Comparator_Seriallized #(parameter n=3) (    
+module Multi_Bit_Comparator #(parameter n=3) (    
     input clk, reset,
     input [n:0] a_in, b_in,
     
@@ -25,11 +25,8 @@ module Multi_Bit_Comparator_Seriallized #(parameter n=3) (
             c = {(n+1){1'b1}};
             start = 0; //Once the comparision is started new input will not be taken
         end
-    end
-    
-    always @ (posedge clk && equal_to) begin //Next bits are checked only if current bits are equal
-        #2;
-        if(|c) begin //As long as counter is non-zero, it serial input will be taken
+
+        if(equal_to && {|c}) begin //As long as counter is non-zero, it serial input will be taken
             if(reset) {less_than, equal_to, greater_than} = 3'b000;
             else if(a[n]^b[n]) {less_than, equal_to, greater_than} = {b[n], 1'b0, a[n]};
             else {less_than, equal_to, greater_than} = 3'b010;
