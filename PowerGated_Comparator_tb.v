@@ -24,10 +24,12 @@ module PowerGated_Comparator_tb();
     always #10 clk = ~clk;
     
     initial begin
+        //The reset signal needs to be high long enough for all bits to receive it
         #10  reset = 1;        
         #10  reset = 0;        
         a = 4'ha; 
         b = 4'hb;
+        //The circuit nees to be reset before each change in input
         #10  reset = 1;        
         #10  reset = 0;        
         a = 4'h8; 
