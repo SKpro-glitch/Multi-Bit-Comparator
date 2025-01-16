@@ -19,18 +19,18 @@ module Multi_Bit_Comparator_PowerGated #(parameter n=3) (
     Single_Bit_Comparator_PowerGated comp(
     .enable(enable), 
     .reset(reset),
-    .a(a[0]), .b(b[0]),
-    .less_than(less[0]),
-    .equal_to(equal[0]),
-    .greater_than(greater[0])
+    .a(a[n]), .b(b[n]),
+    .less_than(less[n]),
+    .equal_to(equal[n]),
+    .greater_than(greater[n])
     );
 
     //Instances of the Single Bit Comparator are generated for each bit of the input width
     genvar i;
     generate
-        for(i=1; i<=n; i=i+1) begin
+        for(i=0; i<n; i=i+1) begin
             Single_Bit_Comparator_PowerGated comp0(
-                .enable(equal[i-1]), 
+                .enable(equal[i+1]), 
                 .reset(reset),
                 .a(a[i]), .b(b[i]),
                 .less_than(less[i]),
@@ -44,7 +44,7 @@ module Multi_Bit_Comparator_PowerGated #(parameter n=3) (
     always @ (*) begin 
         #1 less_than = |less;
         #1 greater_than = |greater;
-        #1 equal_to = equal[n];
+        #1 equal_to = equal[0];
     end
     
 endmodule
