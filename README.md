@@ -18,6 +18,6 @@
 </br>
 ![image](https://github.com/user-attachments/assets/ba54a9f9-df3f-4b8d-9bd7-729253db7038)
 </br> </br>
-**Serialized Multi Bit Comparator:** Fmax = 
+**Serialized Multi Bit Comparator:** Fmax = 118.88 MHz
 </br>
-![image](https://github.com/user-attachments/assets/b2a5f4ec-df47-471a-b8e5-57943ccd9b0a)
+![image](https://github.com/user-attachments/assets/fffdd3b8-c5a5-40d7-b859-9f90e69871de)
