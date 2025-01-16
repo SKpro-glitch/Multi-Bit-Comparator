@@ -11,7 +11,7 @@ module Single_Bit_Comparator_PowerGated (
     always @ (enable) begin
         #2;
         if(reset) {less_than, equal_to, greater_than} = 3'b000;
-        else if(a^b) {less_than, equal_to, greater_than} = {a, 1'b0, b};
+        else if(a^b) {less_than, equal_to, greater_than} = {b, 1'b0, a};
         else {less_than, equal_to, greater_than} = 3'b010;
     end
     
