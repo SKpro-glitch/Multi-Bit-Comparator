@@ -2,7 +2,7 @@
 
 **Author:** Soham Kapur
 </br> </br>
-**Description:** Variations of a multi-bit generalized comparator with trade-offs among timing and area.
+**Description:** Variations of a generalized multi-bit/magnitude comparator with trade-offs among timing and area.
 </br></br>
 **Tools Used:** Verilog HDL, Xilinx Vivado, Altera Quartus
 </br> </br>
