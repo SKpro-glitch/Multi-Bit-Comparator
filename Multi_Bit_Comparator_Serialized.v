@@ -17,12 +17,12 @@ module Multi_Bit_Comparator #(parameter n=3) (
     always @ (posedge clk) begin
         //The reset line will initialize all outputs to zero and the counter to all 1s
         if(reset) begin
-            {less_than, equal_to, greater_than} = 3'b010;
+            {less_than, equal_to, greater_than} = 3'b000;
             start = 1'b1;
+            c = {(n+1){1'b1}};
         end
         else if(start) begin
             #1 {a, b} = {a_in, b_in}; //Input is taken in at the beginning of the operation
-            c = {(n+1){1'b1}};
             start = 0; //Once the comparision is started new input will not be taken
         end
 

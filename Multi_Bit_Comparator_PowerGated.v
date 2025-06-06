@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 
-module Multi_Bit_Comparator_PowerGated #(parameter n=3) (    
+module Multi_Bit_Comparator_PowerGated #(parameter n=3) (
     input enable, reset,
     input [n:0] a_in, b_in,
     
@@ -25,7 +25,7 @@ module Multi_Bit_Comparator_PowerGated #(parameter n=3) (
     .greater_than(greater[n])
     );
 
-    //Instances of the Single Bit Comparator are generated for each bit of the input width
+    //Instances of the Single Bit Comparator are generated for each bit of the input
     genvar i;
     generate
         for(i=0; i<n; i=i+1) begin
