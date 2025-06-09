@@ -1,4 +1,5 @@
 `timescale 1ns / 1ps
+`include "Single_Bit_Comparator_PowerGated.v"
 //////////////////////////////////////////////////////////////////////////////////
 
 module Multi_Bit_Comparator_PowerGated #(parameter n=3) (
