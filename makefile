@@ -23,9 +23,9 @@ run: Multi_Bit_Comparator_Serialized
 verilator.stamp: Multi_Bit_Comparator_Serialized.v
 	touch verilator.stamp
 	verilator --no-timing --threads 1 --trace --cc --euvm $^
-	(cd euvm_dir; g++ -c -I ../obj_dir/ -I $(VLBINDIR)/../share/verilator/include Vadder_avst_euvm_funcs.cpp)
-	(cd euvm_dir; g++ -c -I ../obj_dir/ -I $(VLBINDIR)/../share/verilator/include $(LDC2BINDIR)/../import/esdl/intf/verilator/cpp/verilated_vcd_d.cpp -o verilated_vcd_d.o)
-	(cd euvm_dir; g++ -c -I ../obj_dir/ -I $(VLBINDIR)/../share/verilator/include $(LDC2BINDIR)/../import/esdl/intf/verilator/cpp/verilated_d.cpp -o verilated_d.o)
+	(cd euvm_dir; g++ -c -I obj_dir/ -I $(VLBINDIR)/../share/verilator/include Vadder_avst_euvm_funcs.cpp)
+	(cd euvm_dir; g++ -c -I obj_dir/ -I $(VLBINDIR)/../share/verilator/include $(LDC2BINDIR)/../import/esdl/intf/verilator/cpp/verilated_vcd_d.cpp -o verilated_vcd_d.o)
+	(cd euvm_dir; g++ -c -I obj_dir/ -I $(VLBINDIR)/../share/verilator/include $(LDC2BINDIR)/../import/esdl/intf/verilator/cpp/verilated_d.cpp -o verilated_d.o)
 	(cd obj_dir; make -f Vadder_avst.mk Vadder_avst__ALL.a verilated.o verilated_vcd_c.o verilated_threads.o)
 
 euvm_dir/Vadder_avst_euvm.d euvm_dir/Vadder_avst_euvm_funcs.o euvm_dir/verilated_vcd_d.o obj_dir/VSerialized_Comparator_tb__ALL.a obj_dir/verilated.o: verilator.stamp
