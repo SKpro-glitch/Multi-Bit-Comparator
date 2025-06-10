@@ -6,9 +6,20 @@ import uvm;
 
 void main()
 {
+    uint random_seed;
+
     CommandLine cmdl =  new CommandLine(args);
 
 
+    if (cmdl.plusArgs("random_seed=" ~ "%d", random_seed))
+        writeln("Using random_seed: ", random_seed);
+    else random_seed = 1;
+
+    auto tb = new testbench;
+    tb.multicore(0, 1);
+    tb.elaborate("tb", args);
+    tb.set_seed(random_seed);
+    tb.start();
 }
 
 class testbench: uvm_tb
@@ -19,7 +30,7 @@ class testbench: uvm_tb
     {
         uvm_config_tb!(comp_in_intf).set(null, "uvm_test_top.env.agent.driver", "comp_in", top.compin);
         uvm_config_tb!(comp_out_intf).set(null, "uvm_test_top.env.agent.driver", "comp_out", top.compout);
-
+        ///////////////////////////////////////////////////////////////////
     }
 }
 
@@ -130,7 +141,7 @@ class comp_in_intf: VlInterface
 
 class comp_out_intf: VlInterface
 {
-    //interface for output ports of the design
+    //Interface for output ports of the design
     Port!(Signal!(ubvec!1)) clock;
     Port!(Signal!(ubvec!1)) reset;
 
@@ -152,7 +163,8 @@ class random_test: uvm_test
 
     this(string name, uvm_component parent) { super(name, parent); }
 
-    @UVM_BUILD { comp_env env; phrase }
+    @UVM_BUILD { comp_env env; }
+
   
     override void run_phase(uvm_phase phase) 
     {
@@ -173,7 +185,28 @@ class random_test: uvm_test
 
 class comp_agent: uvm_agent
 {
-    //////////////////////
+
+  @UVM_BUILD {
+    comp_sequencer sequencer;
+    comp_driver    driver;
+    
+    comp_monitor   req_monitor;
+    comp_monitor   rsp_monitor;
+
+    comp_scoreboard   scoreboard;
+  }
+  
+  mixin uvm_component_utils;
+   
+  this(string name, uvm_component parent = null) {
+    super(name, parent);
+  }
+
+  override void connect_phase(uvm_phase phase) {
+    driver.seq_item_port.connect(sequencer.seq_item_export);
+    req_monitor.egress.connect(scoreboard.req_analysis);
+    rsp_monitor.egress.connect(scoreboard.rsp_analysis);
+  }
 }
 
 class comp_sequencer: uvm_sequencer!comp_item
@@ -194,8 +227,8 @@ class comp_monitor: uvm_monitor
         uvm_analysis_imp!(comp_monitor, write) ingress;
     }
 
-
-    this(string name, uvm_component parent = null) { super(name, parent); }
+    this(string name, uvm_component parent = null) 
+    { super(name, parent); }
 
     comp_seq seq;
 
@@ -267,7 +300,7 @@ class comp_scoreboard: uvm_scoreboard
     {
         auto expected = req_queue[matched].transform();
         
-        if (expected == rsp_queue[matched].phrase) ///////////////////////////////////////////////////
+        if (expected == rsp_queue[matched].phrase)
         {
             uvm_info("MATCHED", format("Scoreboard received expected response #%d", matched), UVM_LOW);
             uvm_info("REQUEST", format("%s", req_queue[$-1].phrase), UVM_LOW);
@@ -314,8 +347,8 @@ class comp_driver: uvm_driver!(comp_item)
 
                 wait (comp_in.clock.negedge());
 
-                comp_in.a_in = req.a_in;
-                comp_in.b_in = req.b_in;
+                comp_in.a_in = req.a;
+                comp_in.b_in = req.b;
                 
                 seq_item_port.item_done();
             }
@@ -327,7 +360,7 @@ class comp_driver: uvm_driver!(comp_item)
 
 class comp_seq: uvm_sequence!comp_item
 {
-    @UVM_DEFAULT { @rand uint seq_size; }
+    @UVM_DEFAULT { @rand uint seq_size, a, b; }
 
     mixin uvm_object_utils;
 
@@ -377,7 +410,13 @@ class comp_item: uvm_sequence_item
 {
     mixin uvm_object_utils;
 
-    @UVM_DEFAULT { @rand uint a_in, b_in; }
+    @UVM_DEFAULT 
+    { 
+        @rand uint a_in, b_in; 
+
+        ubvec!1 less_than, equal_to, greater_than;
+        ubvec!3 phrase = (less_than ~ equal_to ~ greater_than);
+    }
     
     this(string name = "comp_item") { super(name); }
 
