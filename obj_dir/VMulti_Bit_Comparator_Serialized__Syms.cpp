@@ -1,16 +1,16 @@
 // Verilated -*- C++ -*-
 // DESCRIPTION: Verilator output: Symbol table implementation internals
 
-#include "Vadder_avst__pch.h"
-#include "Vadder_avst.h"
-#include "Vadder_avst___024root.h"
+#include "VMulti_Bit_Comparator_Serialized__pch.h"
+#include "VMulti_Bit_Comparator_Serialized.h"
+#include "VMulti_Bit_Comparator_Serialized___024root.h"
 
 // FUNCTIONS
-Vadder_avst__Syms::~Vadder_avst__Syms()
+VMulti_Bit_Comparator_Serialized__Syms::~VMulti_Bit_Comparator_Serialized__Syms()
 {
 }
 
-Vadder_avst__Syms::Vadder_avst__Syms(VerilatedContext* contextp, const char* namep, Vadder_avst* modelp)
+VMulti_Bit_Comparator_Serialized__Syms::VMulti_Bit_Comparator_Serialized__Syms(VerilatedContext* contextp, const char* namep, VMulti_Bit_Comparator_Serialized* modelp)
     : VerilatedSyms{contextp}
     // Setup internal state of the Syms class
     , __Vm_modelp{modelp}
@@ -18,9 +18,9 @@ Vadder_avst__Syms::Vadder_avst__Syms(VerilatedContext* contextp, const char* nam
     , TOP{this, namep}
 {
         // Check resources
-        Verilated::stackCheck(23);
+        Verilated::stackCheck(11);
     // Configure time unit / time precision
-    _vm_contextp__->timeunit(-12);
+    _vm_contextp__->timeunit(-9);
     _vm_contextp__->timeprecision(-12);
     // Setup each module's pointers to their submodules
     // Setup each module's pointer back to symbol table (for public functions)

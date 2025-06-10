@@ -7,20 +7,19 @@ import esdl.intf.verilator.trace: VerilatedVcdC, VerilatedTraceBaseC,VerilatedVc
 
 
 extern(C++) {
-    align(8) class VSerialized_Comparator_tb: VerilatedModel {
+    align(8) class VMulti_Bit_Comparator_Serialized: VerilatedModel {
         //Symbol table, currently unimplemented, using void pointer
         void* vlSymsp;
 
         //PORTS 
         ubvec!(1)* clk;
         ubvec!(1)* reset;
-        ubvec!(8)* a_in;
-        ubvec!(8)* b_in;
+        ubvec!(4)* a_in;
+        ubvec!(4)* b_in;
         ubvec!(1)* less_than;
         ubvec!(1)* equal_to;
         ubvec!(1)* greater_than;
-        ubvec!(1)* solved;
-        
+
         // CELLS
         //Currently unimplemented, using void pointers 
 
@@ -39,45 +38,45 @@ extern(C++) {
         final override char* modelName() const;
         final override uint threads() const;
     }
-    VSerialized_Comparator_tb create_VSerialized_Comparator_tb();
-    void finalize(VSerialized_Comparator_tb obj);
+    VMulti_Bit_Comparator_Serialized create_VMulti_Bit_Comparator_Serialized();
+    void finalize(VMulti_Bit_Comparator_Serialized obj);
     
 }
-
-class DVSerialized_Comparator_tb: Entity
+class DVMulti_Bit_Comparator_Serialized: Entity
  {
-    VSerialized_Comparator_tb dut;
+    VMulti_Bit_Comparator_Serialized _dut;
     
-    this () { dut = create_VSerialized_Comparator_tb(); }
-    
+    this () {
+        _dut = create_VMulti_Bit_Comparator_Serialized();
+    }
     override void doConnect() {
-        clk(dut.clk);
-        reset(dut.reset);
-        a_in(dut.a_in);
-        b_in(dut.b_in);
-        less_than(dut.less_than);
-        equal_to(dut.equal_to);
-        greater_than(dut.greater_than);
-        solved(dut.solved);
+        clk(_dut.clk);
+        reset(_dut.reset);
+        a_in(_dut.a_in);
+        b_in(_dut.b_in);
+        less_than(_dut.less_than);
+        equal_to(_dut.equal_to);
+        greater_than(_dut.greater_than);
     }
 
     //Functions for Ports 
     VlExport!(1) clk;
     VlExport!(1) reset;
-    VlExport!(8) a_in;
-    VlExport!(8) b_in;
+    VlExport!(4) a_in;
+    VlExport!(4) b_in;
     VlExport!(1) less_than;
     VlExport!(1) equal_to;
     VlExport!(1) greater_than;
-    VlExport!(1) solved;
-
-    final void eval() { dut.eval(); }
-
-    final void finish() { finalize(dut); }
-
-    final void trace(VerilatedVcdD tfp, int levels, int options = 0) 
-    { dut.trace(tfp.getTraceBase(), levels, options); }
-
-    final void trace(VerilatedTraceBaseC tfp, int levels, int options = 0) 
-    { dut.trace(tfp, levels, options); }
+    final void eval() {
+        _dut.eval();
+    }
+    final void finish() {
+        finalize(_dut);
+    }
+    final void trace(VerilatedVcdD tfp, int levels, int options = 0) {
+        _dut.trace(tfp.getTraceBase(), levels, options);
+    }
+    final void trace(VerilatedTraceBaseC tfp, int levels, int options = 0) {
+        _dut.trace(tfp, levels, options);
+    }
 }

@@ -5,20 +5,20 @@
 // The class here is then constructed to instantiate the design.
 // See the Verilator manual for examples.
 
-#ifndef VERILATED_VADDER_AVST_H_
-#define VERILATED_VADDER_AVST_H_  // guard
+#ifndef VERILATED_VMULTI_BIT_COMPARATOR_SERIALIZED_H_
+#define VERILATED_VMULTI_BIT_COMPARATOR_SERIALIZED_H_  // guard
 
 #include "verilated.h"
 
-class Vadder_avst__Syms;
-class Vadder_avst___024root;
+class VMulti_Bit_Comparator_Serialized__Syms;
+class VMulti_Bit_Comparator_Serialized___024root;
 class VerilatedVcdC;
 
 // This class is the main interface to the Verilated model
-class alignas(VL_CACHE_LINE_BYTES) Vadder_avst VL_NOT_FINAL : public VerilatedModel {
+class alignas(VL_CACHE_LINE_BYTES) VMulti_Bit_Comparator_Serialized VL_NOT_FINAL : public VerilatedModel {
   private:
     // Symbol table holding complete model state (owned by this class)
-    Vadder_avst__Syms* const vlSymsp;
+    VMulti_Bit_Comparator_Serialized__Syms* const vlSymsp;
 
   public:
 
@@ -31,14 +31,11 @@ class alignas(VL_CACHE_LINE_BYTES) Vadder_avst VL_NOT_FINAL : public VerilatedMo
     // propagate new values into/out from the Verilated model.
     VL_IN8(&clk,0,0);
     VL_IN8(&reset,0,0);
-    VL_IN8(&data_in,7,0);
-    VL_IN8(&end_in,0,0);
-    VL_IN8(&valid_in,0,0);
-    VL_OUT8(&ready_in,0,0);
-    VL_OUT8(&data_out,7,0);
-    VL_OUT8(&end_out,0,0);
-    VL_OUT8(&valid_out,0,0);
-    VL_IN8(&ready_out,0,0);
+    VL_IN8(&a_in,3,0);
+    VL_IN8(&b_in,3,0);
+    VL_OUT8(&less_than,0,0);
+    VL_OUT8(&equal_to,0,0);
+    VL_OUT8(&greater_than,0,0);
 
     // CELLS
     // Public to allow access to /* verilator public */ items.
@@ -46,19 +43,19 @@ class alignas(VL_CACHE_LINE_BYTES) Vadder_avst VL_NOT_FINAL : public VerilatedMo
 
     // Root instance pointer to allow access to model internals,
     // including inlined /* verilator public_flat_* */ items.
-    Vadder_avst___024root* const rootp;
+    VMulti_Bit_Comparator_Serialized___024root* const rootp;
 
     // CONSTRUCTORS
     /// Construct the model; called by application code
     /// If contextp is null, then the model will use the default global context
     /// If name is "", then makes a wrapper with a
     /// single model invisible with respect to DPI scope names.
-    explicit Vadder_avst(VerilatedContext* contextp, const char* name = "TOP");
-    explicit Vadder_avst(const char* name = "TOP");
+    explicit VMulti_Bit_Comparator_Serialized(VerilatedContext* contextp, const char* name = "TOP");
+    explicit VMulti_Bit_Comparator_Serialized(const char* name = "TOP");
     /// Destroy the model; called (often implicitly) by application code
-    virtual ~Vadder_avst();
+    virtual ~VMulti_Bit_Comparator_Serialized();
   private:
-    VL_UNCOPYABLE(Vadder_avst);  ///< Copying not allowed
+    VL_UNCOPYABLE(VMulti_Bit_Comparator_Serialized);  ///< Copying not allowed
 
   public:
     // API METHODS

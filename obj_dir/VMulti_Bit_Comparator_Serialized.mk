@@ -2,9 +2,9 @@
 # DESCRIPTION: Verilator output: Makefile for building Verilated archive or executable
 #
 # Execute this makefile from the object directory:
-#    make -f Vadder_avst.mk
+#    make -f VMulti_Bit_Comparator_Serialized.mk
 
-default: libVadder_avst
+default: libVMulti_Bit_Comparator_Serialized
 
 ### Constants...
 # Perl executable (from $PERL, defaults to 'perl' if not set)
@@ -32,9 +32,9 @@ VM_SC_TARGET_ARCH = linux
 
 ### Vars...
 # Design prefix (from --prefix)
-VM_PREFIX = Vadder_avst
+VM_PREFIX = VMulti_Bit_Comparator_Serialized
 # Module prefix (from --prefix)
-VM_MODPREFIX = Vadder_avst
+VM_MODPREFIX = VMulti_Bit_Comparator_Serialized
 # User CFLAGS (from -CFLAGS on Verilator command line)
 VM_USER_CFLAGS = \
 
@@ -51,13 +51,13 @@ VM_USER_DIR = \
 
 ### Default rules...
 # Include list of all generated classes
-include Vadder_avst_classes.mk
+include VMulti_Bit_Comparator_Serialized_classes.mk
 # Include global rules
 include $(VERILATOR_ROOT)/include/verilated.mk
 
 ### Library rules (default lib mode)
-libVadder_avst.a: $(VK_OBJS) $(VK_USER_OBJS) $(VM_HIER_LIBS)
+libVMulti_Bit_Comparator_Serialized.a: $(VK_OBJS) $(VK_USER_OBJS) $(VM_HIER_LIBS)
 libverilated.a: $(VK_GLOBAL_OBJS)
-libVadder_avst: libVadder_avst.a libverilated.a $(VM_PREFIX)__ALL.a
+libVMulti_Bit_Comparator_Serialized: libVMulti_Bit_Comparator_Serialized.a libverilated.a $(VM_PREFIX)__ALL.a
 
 # Verilated -*- Makefile -*-

@@ -2,7 +2,7 @@
 # DESCRIPTION: Verilator output: Make include file with class lists
 #
 # This file lists generated Verilated files, for including in higher level makefiles.
-# See Vadder_avst.mk for the caller.
+# See VMulti_Bit_Comparator_Serialized.mk for the caller.
 
 ### Switches...
 # C11 constructs required?  0/1 (always on now)
@@ -23,24 +23,24 @@ VM_TRACE_FST = 0
 ### Object file lists...
 # Generated module classes, fast-path, compile with highest optimization
 VM_CLASSES_FAST += \
-	Vadder_avst \
-	Vadder_avst___024root__DepSet_h1f33746c__0 \
-	Vadder_avst___024root__DepSet_h48c4caca__0 \
+	VMulti_Bit_Comparator_Serialized \
+	VMulti_Bit_Comparator_Serialized___024root__DepSet_h16244fcb__0 \
+	VMulti_Bit_Comparator_Serialized___024root__DepSet_h79b15e54__0 \
 
 # Generated module classes, non-fast-path, compile with low/medium optimization
 VM_CLASSES_SLOW += \
-	Vadder_avst___024root__Slow \
-	Vadder_avst___024root__DepSet_h48c4caca__0__Slow \
+	VMulti_Bit_Comparator_Serialized___024root__Slow \
+	VMulti_Bit_Comparator_Serialized___024root__DepSet_h79b15e54__0__Slow \
 
 # Generated support classes, fast-path, compile with highest optimization
 VM_SUPPORT_FAST += \
-	Vadder_avst__Trace__0 \
+	VMulti_Bit_Comparator_Serialized__Trace__0 \
 
 # Generated support classes, non-fast-path, compile with low/medium optimization
 VM_SUPPORT_SLOW += \
-	Vadder_avst__Syms \
-	Vadder_avst__Trace__0__Slow \
-	Vadder_avst__TraceDecls__0__Slow \
+	VMulti_Bit_Comparator_Serialized__Syms \
+	VMulti_Bit_Comparator_Serialized__Trace__0__Slow \
+	VMulti_Bit_Comparator_Serialized__TraceDecls__0__Slow \
 
 # Global classes, need linked once per executable, fast-path, compile with highest optimization
 VM_GLOBAL_FAST += \

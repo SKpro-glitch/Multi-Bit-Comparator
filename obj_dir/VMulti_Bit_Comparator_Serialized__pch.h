@@ -3,11 +3,11 @@
 //
 // Internal details; most user sources do not need this header,
 // unless using verilator public meta comments.
-// Suggest use Vadder_avst.h instead.
+// Suggest use VMulti_Bit_Comparator_Serialized.h instead.
 
 
-#ifndef VERILATED_VADDER_AVST__PCH_H_
-#define VERILATED_VADDER_AVST__PCH_H_  // guard
+#ifndef VERILATED_VMULTI_BIT_COMPARATOR_SERIALIZED__PCH_H_
+#define VERILATED_VMULTI_BIT_COMPARATOR_SERIALIZED__PCH_H_  // guard
 
 // GCC and Clang only will precompile headers (PCH) for the first header.
 // So, make sure this is the one and only PCH.
@@ -20,8 +20,8 @@
 
 #include "verilated.h"
 
-#include "Vadder_avst__Syms.h"
-#include "Vadder_avst.h"
+#include "VMulti_Bit_Comparator_Serialized__Syms.h"
+#include "VMulti_Bit_Comparator_Serialized.h"
 
 // Additional include files added using '--compiler-include'
 

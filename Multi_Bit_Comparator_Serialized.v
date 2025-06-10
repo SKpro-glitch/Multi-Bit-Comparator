@@ -22,7 +22,7 @@ module Multi_Bit_Comparator #(parameter n=3) (
             c = {(n+1){1'b1}};
         end
         else if(start) begin
-            #1 {a, b} = {a_in, b_in}; //Input is taken in at the beginning of the operation
+            {a, b} = {a_in, b_in}; //Input is taken in at the beginning of the operation
             start = 0; //Once the comparision is started new input will not be taken
         end
 
@@ -31,9 +31,9 @@ module Multi_Bit_Comparator #(parameter n=3) (
             else if(a[n]^b[n]) {less_than, equal_to, greater_than} = {b[n], 1'b0, a[n]};
             else {less_than, equal_to, greater_than} = 3'b010;
             
-            #1 a = a << 1;
-            #1 b = b << 1;
-            #1 c = c << 1;
+            a = a << 1;
+            b = b << 1;
+            c = c << 1;
         end
     end
         
