@@ -21,14 +21,17 @@ class alignas(VL_CACHE_LINE_BYTES) VSerialized_Comparator___024root final : publ
     VL_OUT8(less_than,0,0);
     VL_OUT8(equal_to,0,0);
     VL_OUT8(greater_than,0,0);
+    VL_OUT8(solved,0,0);
     CData/*3:0*/ Serialized_Comparator__DOT__a;
     CData/*3:0*/ Serialized_Comparator__DOT__b;
     CData/*3:0*/ Serialized_Comparator__DOT__c;
     CData/*0:0*/ Serialized_Comparator__DOT__start;
+    CData/*0:0*/ __VstlFirstIteration;
     CData/*0:0*/ __Vtrigprevexpr___TOP__clk__0;
     CData/*0:0*/ __VactContinue;
     IData/*31:0*/ __VactIterCount;
     VlUnpacked<CData/*0:0*/, 2> __Vm_traceActivity;
+    VlTriggerVec<1> __VstlTriggered;
     VlTriggerVec<1> __VactTriggered;
     VlTriggerVec<1> __VnbaTriggered;
 

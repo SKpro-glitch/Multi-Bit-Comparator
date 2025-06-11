@@ -17,6 +17,7 @@ VSerialized_Comparator::VSerialized_Comparator(VerilatedContext* _vcontextp__, c
     , less_than{vlSymsp->TOP.less_than}
     , equal_to{vlSymsp->TOP.equal_to}
     , greater_than{vlSymsp->TOP.greater_than}
+    , solved{vlSymsp->TOP.solved}
     , rootp{&(vlSymsp->TOP)}
 {
     // Register model with the context

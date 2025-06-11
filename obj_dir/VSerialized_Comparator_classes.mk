@@ -30,6 +30,7 @@ VM_CLASSES_FAST += \
 # Generated module classes, non-fast-path, compile with low/medium optimization
 VM_CLASSES_SLOW += \
 	VSerialized_Comparator___024root__Slow \
+	VSerialized_Comparator___024root__DepSet_hdd3358cf__0__Slow \
 	VSerialized_Comparator___024root__DepSet_h9eec44b4__0__Slow \
 
 # Generated support classes, fast-path, compile with highest optimization

@@ -37,6 +37,7 @@ void VSerialized_Comparator___024root__trace_chg_0_sub_0(VSerialized_Comparator_
     bufp->chgBit(oldp+8,(vlSelfRef.less_than));
     bufp->chgBit(oldp+9,(vlSelfRef.equal_to));
     bufp->chgBit(oldp+10,(vlSelfRef.greater_than));
+    bufp->chgBit(oldp+11,(vlSelfRef.solved));
 }
 
 void VSerialized_Comparator___024root__trace_cleanup(void* voidSelf, VerilatedVcd* /*unused*/) {

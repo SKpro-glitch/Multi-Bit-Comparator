@@ -18,7 +18,7 @@ VSerialized_Comparator__Syms::VSerialized_Comparator__Syms(VerilatedContext* con
     , TOP{this, namep}
 {
         // Check resources
-        Verilated::stackCheck(11);
+        Verilated::stackCheck(18);
     // Configure time unit / time precision
     _vm_contextp__->timeunit(-9);
     _vm_contextp__->timeprecision(-12);

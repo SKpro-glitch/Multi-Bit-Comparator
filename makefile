@@ -8,7 +8,7 @@ LDC2BINDIR = $(dir $(shell which ldc2))
 VLBINDIR = $(dir $(shell which verilator))
 VERBOSITY = NONE
 
-VLATOR_SRC = euvm_dir/V6_euvm.d euvm_dir/VSerialized_Comparator_euvm_funcs.cpp obj_dir/VSerialized_Comparator.cpp obj_dir/VSerialized_Comparator.h
+VLATOR_SRC = euvm_dir/VSerialized_Comparator_euvm.d euvm_dir/VSerialized_Comparator_euvm_funcs.cpp obj_dir/VSerialized_Comparator.cpp obj_dir/VSerialized_Comparator.h
 
 .PHONY: all clean
 
@@ -23,9 +23,9 @@ run: Serialized_Comparator
 verilator.stamp: Serialized_Comparator.v
 	touch verilator.stamp
 	verilator --no-timing --threads 1 --trace --cc --euvm $^
-	(cd euvm_dir; g++ -c -I obj_dir/ -I $(VLBINDIR)/../share/verilator/include VSerialized_Comparator_euvm_funcs.cpp)
-	(cd euvm_dir; g++ -c -I obj_dir/ -I $(VLBINDIR)/../share/verilator/include $(LDC2BINDIR)/../import/esdl/intf/verilator/cpp/verilated_vcd_d.cpp -o verilated_vcd_d.o)
-	(cd euvm_dir; g++ -c -I obj_dir/ -I $(VLBINDIR)/../share/verilator/include $(LDC2BINDIR)/../import/esdl/intf/verilator/cpp/verilated_d.cpp -o verilated_d.o)
+	(cd euvm_dir; g++ -c -I ../obj_dir/ -I $(VLBINDIR)/../share/verilator/include VSerialized_Comparator_euvm_funcs.cpp)
+	(cd euvm_dir; g++ -c -I ../obj_dir/ -I $(VLBINDIR)/../share/verilator/include $(LDC2BINDIR)/../import/esdl/intf/verilator/cpp/verilated_vcd_d.cpp -o verilated_vcd_d.o)
+	(cd euvm_dir; g++ -c -I ../obj_dir/ -I $(VLBINDIR)/../share/verilator/include $(LDC2BINDIR)/../import/esdl/intf/verilator/cpp/verilated_d.cpp -o verilated_d.o)
 	(cd obj_dir; make -f VSerialized_Comparator.mk VSerialized_Comparator__ALL.a verilated.o verilated_vcd_c.o verilated_threads.o)
 
 euvm_dir/VSerialized_Comparator_euvm.d euvm_dir/VSerialized_Comparator_euvm_funcs.o euvm_dir/verilated_vcd_d.o obj_dir/VSerialized_Comparator__ALL.a obj_dir/verilated.o: verilator.stamp
@@ -33,10 +33,10 @@ euvm_dir/VSerialized_Comparator_euvm.d euvm_dir/VSerialized_Comparator_euvm_func
 
 Serialized_Comparator: Serialized_Comparator.d \
 	   euvm_dir/VSerialized_Comparator_euvm.d  \
-	   $(LDC2BINDIR)/import/esdl/intf/verilator/trace.d \
+	   $(LDC2BINDIR)../import/esdl/intf/verilator/trace.d \
 	   euvm_dir/verilated_vcd_d.o euvm_dir/verilated_d.o \
 	   euvm_dir/VSerialized_Comparator_euvm_funcs.o  \
-	   obj_dir/VSerialized_Comparator_ALL.a \
+	   obj_dir/VSerialized_Comparator__ALL.a \
 	   obj_dir/verilated.o  obj_dir/verilated_threads.o obj_dir/verilated_vcd_c.o \
 	   obj_dir/verilated_threads.o
 	ldc2 $(DFLAGS) -Ieuvm_dir -link-defaultlib-shared -of$@ -L-luvm-ldc-shared -L-lesdl-ldc-shared -L-lz3 \

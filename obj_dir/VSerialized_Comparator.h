@@ -36,6 +36,7 @@ class alignas(VL_CACHE_LINE_BYTES) VSerialized_Comparator VL_NOT_FINAL : public 
     VL_OUT8(&less_than,0,0);
     VL_OUT8(&equal_to,0,0);
     VL_OUT8(&greater_than,0,0);
+    VL_OUT8(&solved,0,0);
 
     // CELLS
     // Public to allow access to /* verilator public */ items.

@@ -1,10 +1,14 @@
 module Serialized_Comparator_tb;
 
 import std.stdio;
+import std.string: format;
 import esdl;
+import esdl.intf.verilator.verilated;
+import esdl.intf.verilator.trace;
 import uvm;
+import VSerialized_Comparator_euvm;
 
-void main()
+void main(string[] args)
 {
     uint random_seed;
 
@@ -28,8 +32,8 @@ class testbench: uvm_tb
 
     override void initial()
     {
-        uvm_config_tb!(comp_in_intf).set(null, "uvm_test_top.env.agent.driver", "comp_in", top.compin);
-        uvm_config_tb!(comp_out_intf).set(null, "uvm_test_top.env.agent.driver", "comp_out", top.compout);
+        uvm_config_db!(comp_in_intf).set(null, "uvm_test_top.env.agent.driver", "comp_in", top.compin);
+        uvm_config_db!(comp_out_intf).set(null, "uvm_test_top.env.agent.driver", "comp_out", top.compout);
         ///////////////////////////////////////////////////////////////////
     }
 }
@@ -68,7 +72,7 @@ class Top: Entity
         }
     }
 
-    override void connections()
+    override void doConnect()
     {
         //Input connections
         compin.clock(clock);
@@ -81,22 +85,23 @@ class Top: Entity
         compout.clock(clock);
         compout.reset(reset);
 
-        compout.less_than(dut.less_than);
-        compout.equal_to(dut.equal_to);
-        compout.greater_than(dut.greater_than);
+        compout.phrase((dut.less_than ~ dut.equal_to ~ dut.greater_than));
+        //compout.less_than(dut.less_than);
+        //compout.equal_to(dut.equal_to);
+        //compout.greater_than(dut.greater_than);
     }
 
-    void build()
+    override void doBuild()
     {
-        dut = new DVSerialized_Comparator;
+        dut = new DVSerialized_Comparator();
         traceEverOn(true);
-        opentrace("Serialized_Comparator.vcd");
+        openTrace("Serialized_Comparator.vcd");
     }
 
-    Task!stimulateClock stiulateClockTask;
-    Task!stumulateReset stimulateResetTask;
+    Task!stimulateClock stimulateClockTask;
+    Task!stimulateReset stimulateResetTask;
 
-    void stiumulateClock()
+    void stimulateClock()
     {
         clock = false;
         
@@ -145,7 +150,8 @@ class comp_out_intf: VlInterface
     Port!(Signal!(ubvec!1)) clock;
     Port!(Signal!(ubvec!1)) reset;
 
-    VlPort!1 less_than, equal_to, greater_than;
+    VlPort!3 phrase;
+    VlPort!1 solved;
 }
 
 class comp_env: uvm_env
@@ -239,7 +245,7 @@ class comp_monitor: uvm_monitor
         
         seq ~= item;
         
-        if (seq.is_finalized()) 
+        if (seq.phrase) 
         {
             uvm_info("Monitor", "Got Seq " ~ seq.sprint(), UVM_DEBUG);
             egress.write(seq);
@@ -303,8 +309,8 @@ class comp_scoreboard: uvm_scoreboard
         if (expected == rsp_queue[matched].phrase)
         {
             uvm_info("MATCHED", format("Scoreboard received expected response #%d", matched), UVM_LOW);
-            uvm_info("REQUEST", format("%s", req_queue[$-1].phrase), UVM_LOW);
-            uvm_info("RESPONSE", format("%s", rsp_queue[$-1].phrase), UVM_LOW);
+            //uvm_info("REQUEST", format("%s", req_queue[$-1].phrase), UVM_LOW);
+            //uvm_info("RESPONSE", format("%s", rsp_queue[$-1].phrase), UVM_LOW);
         }
         else 
         {
@@ -322,6 +328,7 @@ class comp_driver: uvm_driver!(comp_item)
     mixin uvm_component_utils;
     
     comp_in_intf comp_in;
+    comp_out_intf comp_out;
 
     this(string name, uvm_component parent = null) 
     {
@@ -339,16 +346,13 @@ class comp_driver: uvm_driver!(comp_item)
 
             if (req !is null) 
             {
-                for (int i = 0; i != req.delay; ++i)
-                    wait (comp_in.clock.negedge());
-                
-                while (comp_in.solved == 0 || comp_in.reset == 1)
+                while (comp_out.solved == 0 || comp_in.reset == 1)
                     wait (comp_in.clock.negedge());
 
                 wait (comp_in.clock.negedge());
 
-                comp_in.a_in = req.a;
-                comp_in.b_in = req.b;
+                comp_in.a_in = req.a_in;
+                comp_in.b_in = req.b_in;
                 
                 seq_item_port.item_done();
             }
@@ -360,7 +364,14 @@ class comp_driver: uvm_driver!(comp_item)
 
 class comp_seq: uvm_sequence!comp_item
 {
-    @UVM_DEFAULT { @rand uint seq_size, a, b; }
+    @UVM_DEFAULT 
+    { 
+        @rand uint seq_size;
+        
+        uint a, b;
+
+        ubvec!3 phrase;
+    }
 
     mixin uvm_object_utils;
 
@@ -382,13 +393,15 @@ class comp_seq: uvm_sequence!comp_item
             wait_for_grant();
             req.randomize();
             
-            if (i == seq_size - 1) req.end = true;
-            else req.end = false;
-            
             comp_item cloned = cast(comp_item) req.clone;
             
             send_request(cloned);
         }
+    }
+
+    void set_phrase(comp_item item)
+    {
+        phrase = (item.less_than ~ item.equal_to ~ item.greater_than);
     }
 
     ubvec!3[] transform() 
@@ -414,8 +427,9 @@ class comp_item: uvm_sequence_item
     { 
         @rand uint a_in, b_in; 
 
-        ubvec!1 less_than, equal_to, greater_than;
-        ubvec!3 phrase = (less_than ~ equal_to ~ greater_than);
+        ubvec!1 less_than, equal_to, greater_than, solved;
+
+        //ubvec!3 phrase = (less_than ~ equal_to ~ greater_than);
     }
     
     this(string name = "comp_item") { super(name); }

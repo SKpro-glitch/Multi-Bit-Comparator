@@ -67,6 +67,9 @@ VL_INLINE_OPT void VSerialized_Comparator___024root___nba_sequent__TOP__0(VSeria
         vlSelfRef.Serialized_Comparator__DOT__b = (0xfU 
                                                    & VL_SHIFTL_III(4,4,32, (IData)(vlSelfRef.Serialized_Comparator__DOT__b), 1U));
     }
+    vlSelfRef.solved = ((IData)(vlSelfRef.less_than) 
+                        | ((IData)(vlSelfRef.equal_to) 
+                           | (IData)(vlSelfRef.greater_than)));
 }
 
 void VSerialized_Comparator___024root___eval_triggers__act(VSerialized_Comparator___024root* vlSelf);

@@ -5,7 +5,8 @@ module Serialized_Comparator #(parameter n=3) (
     input clk, reset,
     input [n:0] a_in, b_in,
     
-    output reg less_than, equal_to, greater_than
+    output reg less_than, equal_to, greater_than,
+    output solved
     );
     
     //These registers are created to enable serialization
@@ -14,6 +15,7 @@ module Serialized_Comparator #(parameter n=3) (
     //The start register notes when the comparision process is going on
     reg start=1;
     
+    assign solved = (less_than | equal_to | greater_than);
     always @ (posedge clk) begin
         //The reset line will initialize all outputs to zero and the counter to all 1s
         if(reset) begin

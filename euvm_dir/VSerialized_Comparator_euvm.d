@@ -19,6 +19,7 @@ extern(C++) {
         ubvec!(1)* less_than;
         ubvec!(1)* equal_to;
         ubvec!(1)* greater_than;
+        ubvec!(1)* solved;
 
         // CELLS
         //Currently unimplemented, using void pointers 
@@ -57,6 +58,7 @@ class DVSerialized_Comparator: Entity
         less_than(_dut.less_than);
         equal_to(_dut.equal_to);
         greater_than(_dut.greater_than);
+        solved(_dut.solved);
     }
 
     //Functions for Ports 
@@ -67,6 +69,7 @@ class DVSerialized_Comparator: Entity
     VlExport!(1) less_than;
     VlExport!(1) equal_to;
     VlExport!(1) greater_than;
+    VlExport!(1) solved;
     final void eval() {
         _dut.eval();
     }
