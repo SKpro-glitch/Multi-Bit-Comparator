@@ -5,20 +5,20 @@
 // The class here is then constructed to instantiate the design.
 // See the Verilator manual for examples.
 
-#ifndef VERILATED_VMULTI_BIT_COMPARATOR_SERIALIZED_H_
-#define VERILATED_VMULTI_BIT_COMPARATOR_SERIALIZED_H_  // guard
+#ifndef VERILATED_VSERIALIZED_COMPARATOR_H_
+#define VERILATED_VSERIALIZED_COMPARATOR_H_  // guard
 
 #include "verilated.h"
 
-class VMulti_Bit_Comparator_Serialized__Syms;
-class VMulti_Bit_Comparator_Serialized___024root;
+class VSerialized_Comparator__Syms;
+class VSerialized_Comparator___024root;
 class VerilatedVcdC;
 
 // This class is the main interface to the Verilated model
-class alignas(VL_CACHE_LINE_BYTES) VMulti_Bit_Comparator_Serialized VL_NOT_FINAL : public VerilatedModel {
+class alignas(VL_CACHE_LINE_BYTES) VSerialized_Comparator VL_NOT_FINAL : public VerilatedModel {
   private:
     // Symbol table holding complete model state (owned by this class)
-    VMulti_Bit_Comparator_Serialized__Syms* const vlSymsp;
+    VSerialized_Comparator__Syms* const vlSymsp;
 
   public:
 
@@ -43,19 +43,19 @@ class alignas(VL_CACHE_LINE_BYTES) VMulti_Bit_Comparator_Serialized VL_NOT_FINAL
 
     // Root instance pointer to allow access to model internals,
     // including inlined /* verilator public_flat_* */ items.
-    VMulti_Bit_Comparator_Serialized___024root* const rootp;
+    VSerialized_Comparator___024root* const rootp;
 
     // CONSTRUCTORS
     /// Construct the model; called by application code
     /// If contextp is null, then the model will use the default global context
     /// If name is "", then makes a wrapper with a
     /// single model invisible with respect to DPI scope names.
-    explicit VMulti_Bit_Comparator_Serialized(VerilatedContext* contextp, const char* name = "TOP");
-    explicit VMulti_Bit_Comparator_Serialized(const char* name = "TOP");
+    explicit VSerialized_Comparator(VerilatedContext* contextp, const char* name = "TOP");
+    explicit VSerialized_Comparator(const char* name = "TOP");
     /// Destroy the model; called (often implicitly) by application code
-    virtual ~VMulti_Bit_Comparator_Serialized();
+    virtual ~VSerialized_Comparator();
   private:
-    VL_UNCOPYABLE(VMulti_Bit_Comparator_Serialized);  ///< Copying not allowed
+    VL_UNCOPYABLE(VSerialized_Comparator);  ///< Copying not allowed
 
   public:
     // API METHODS

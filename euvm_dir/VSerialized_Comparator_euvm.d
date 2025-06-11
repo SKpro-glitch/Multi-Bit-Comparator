@@ -7,7 +7,7 @@ import esdl.intf.verilator.trace: VerilatedVcdC, VerilatedTraceBaseC,VerilatedVc
 
 
 extern(C++) {
-    align(8) class VMulti_Bit_Comparator_Serialized: VerilatedModel {
+    align(8) class VSerialized_Comparator: VerilatedModel {
         //Symbol table, currently unimplemented, using void pointer
         void* vlSymsp;
 
@@ -38,16 +38,16 @@ extern(C++) {
         final override char* modelName() const;
         final override uint threads() const;
     }
-    VMulti_Bit_Comparator_Serialized create_VMulti_Bit_Comparator_Serialized();
-    void finalize(VMulti_Bit_Comparator_Serialized obj);
+    VSerialized_Comparator create_VSerialized_Comparator();
+    void finalize(VSerialized_Comparator obj);
     
 }
-class DVMulti_Bit_Comparator_Serialized: Entity
+class DVSerialized_Comparator: Entity
  {
-    VMulti_Bit_Comparator_Serialized _dut;
+    VSerialized_Comparator _dut;
     
     this () {
-        _dut = create_VMulti_Bit_Comparator_Serialized();
+        _dut = create_VSerialized_Comparator();
     }
     override void doConnect() {
         clk(_dut.clk);

@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 
-module Multi_Bit_Comparator #(parameter n=3) (    
+module Serialized_Comparator #(parameter n=3) (    
     input clk, reset,
     input [n:0] a_in, b_in,
     

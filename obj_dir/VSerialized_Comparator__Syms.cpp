@@ -1,16 +1,16 @@
 // Verilated -*- C++ -*-
 // DESCRIPTION: Verilator output: Symbol table implementation internals
 
-#include "VMulti_Bit_Comparator_Serialized__pch.h"
-#include "VMulti_Bit_Comparator_Serialized.h"
-#include "VMulti_Bit_Comparator_Serialized___024root.h"
+#include "VSerialized_Comparator__pch.h"
+#include "VSerialized_Comparator.h"
+#include "VSerialized_Comparator___024root.h"
 
 // FUNCTIONS
-VMulti_Bit_Comparator_Serialized__Syms::~VMulti_Bit_Comparator_Serialized__Syms()
+VSerialized_Comparator__Syms::~VSerialized_Comparator__Syms()
 {
 }
 
-VMulti_Bit_Comparator_Serialized__Syms::VMulti_Bit_Comparator_Serialized__Syms(VerilatedContext* contextp, const char* namep, VMulti_Bit_Comparator_Serialized* modelp)
+VSerialized_Comparator__Syms::VSerialized_Comparator__Syms(VerilatedContext* contextp, const char* namep, VSerialized_Comparator* modelp)
     : VerilatedSyms{contextp}
     // Setup internal state of the Syms class
     , __Vm_modelp{modelp}

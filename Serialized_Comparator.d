@@ -44,7 +44,7 @@ class Top: Entity
     Signal!(ubvec!1) reset;
 
     //Declaring the design Under test (DUT) to be read after going through verilator
-    DVMulti_Bit_Comparator_Serialized dut;
+    DVSerialized_Comparator dut;
 
     comp_in_intf compin;
     comp_out_intf compout;
@@ -88,9 +88,9 @@ class Top: Entity
 
     void build()
     {
-        dut = new DVMulti_Bit_Comparator_Serialized;
+        dut = new DVSerialized_Comparator;
         traceEverOn(true);
-        opentrace("Multi_Bit_Comparator_Serialized.vcd");
+        opentrace("Serialized_Comparator.vcd");
     }
 
     Task!stimulateClock stiulateClockTask;
