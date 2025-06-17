@@ -85,10 +85,10 @@ class Top: Entity
         compout.clock(clock);
         compout.reset(reset);
 
-        compout.phrase((dut.less_than ~ dut.equal_to ~ dut.greater_than));
-        //compout.less_than(dut.less_than);
-        //compout.equal_to(dut.equal_to);
-        //compout.greater_than(dut.greater_than);
+    //    compout.phrase((dut.less_than ~ dut.equal_to ~ dut.greater_than));
+        compout.less_than(dut.less_than);
+        compout.equal_to(dut.equal_to);
+        compout.greater_than(dut.greater_than);
     }
 
     override void doBuild()
@@ -141,7 +141,7 @@ class comp_in_intf: VlInterface
     Port!(Signal!(ubvec!1)) clock;
     Port!(Signal!(ubvec!1)) reset;
 
-    VlPort!1 a_in, b_in;
+    VlPort!4 a_in, b_in;
 }
 
 class comp_out_intf: VlInterface
@@ -150,7 +150,7 @@ class comp_out_intf: VlInterface
     Port!(Signal!(ubvec!1)) clock;
     Port!(Signal!(ubvec!1)) reset;
 
-    VlPort!3 phrase;
+    VlPort!1 less_than, equal_to, greater_than; //phrase;
     VlPort!1 solved;
 }
 
@@ -236,16 +236,16 @@ class comp_monitor: uvm_monitor
     this(string name, uvm_component parent = null) 
     { super(name, parent); }
 
-    comp_seq seq;
+    comp_item seq;
 
     void write(comp_item item) 
     {
         if (seq is null)
-            seq = comp_seq.type_id.create("comp_seq");
+            seq = comp_item.type_id.create("comp_seq");
         
-        seq ~= item;
+        seq = item;
         
-        if (seq.phrase) 
+        if (seq.solved) 
         {
             uvm_info("Monitor", "Got Seq " ~ seq.sprint(), UVM_DEBUG);
             egress.write(seq);
@@ -337,7 +337,7 @@ class comp_driver: uvm_driver!(comp_item)
         assert (comp_in !is null);
     }
 
-    override void run_phase(uvm_phase phase) 
+    override void run_phase(uvm_phase phase)
     {
         super.run_phase(phase);
         while (true) 
