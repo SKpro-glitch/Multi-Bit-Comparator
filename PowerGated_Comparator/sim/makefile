@@ -6,7 +6,7 @@ DFLAGS = -relocation-model=pic -w -O3
 
 LDC2BINDIR = $(dir $(shell which ldc2))
 VLBINDIR = $(dir $(shell which verilator))
-VERBOSITY = NONE
+VERBOSITY=UVM_DEBUG
 
 VLATOR_SRC = euvm_dir/VMulti_Bit_Comparator_PowerGated_euvm.d euvm_dir/VMulti_Bit_Comparator_PowerGated_euvm_funcs.cpp obj_dir/VMulti_Bit_Comparator_PowerGated.cpp obj_dir/VMulti_Bit_Comparator_PowerGated.h
 

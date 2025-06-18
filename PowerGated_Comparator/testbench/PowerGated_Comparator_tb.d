@@ -48,8 +48,15 @@ class seq: uvm_sequence!(item)
 {
     mixin uvm_object_utils;
 
+    item comp;
+
     //Mandatory constructor, no parent for Objects
-    this(string name="") { super(name); }
+    this(string name="") 
+    { 
+        super(name); 
+        
+        comp = item.type_id.create("comp");
+    }
 
     @rand int n;
 
@@ -62,13 +69,13 @@ class seq: uvm_sequence!(item)
     {
         for(int i=0; i<n; i++)
         {
-            item comp;
-
-            start_item(comp);
+            wait_for_grant();
             comp.randomize();
-            writeln("New item: ");
-            comp.print();
-            finish_item(comp);
+
+            writeln("Generated Item %d", i);
+
+            item cloned = cast(item) comp.clone;
+            send_request(cloned);
         }
 
         uvm_info("SEQ", format("%d ITEMS GENERATED", n), UVM_LOW);
@@ -80,7 +87,8 @@ class intf: VlInterface
 {
     //Fixed ports
     Port!(Signal!(ubvec!1)) clock;
-    Port!(Signal!(ubvec!1)) reset;
+    
+    VlPort!1 reset;
 
     //Input virtual ports
     VlPort!8 a_in, b_in;
@@ -90,7 +98,7 @@ class intf: VlInterface
 }
 
 //Driver
-class driver: uvm_driver!item
+class driver: uvm_driver!(item)
 {
     mixin uvm_component_utils;
 
@@ -119,29 +127,50 @@ class driver: uvm_driver!item
         //Toggling the input pins as oer the design
         while(true)
         {
-            item comp = item.type_id.create("comp", this);
-
             writeln("Driver is running");
 
             //Fetching an item and storing it in allocated memory
-            seq_item_port.try_next_item(comp);
+            seq_item_port.try_next_item(req);
 
-            writeln("Got new item");
+            uvm_info(get_type_name(), "Got new item", UVM_LOW);
 
             //Actual driving of them inputs
             //This can be written in another function and called also
              
             //The 'solved' control signal indicates that the operation is completed
-            if(vif.solved)
-                //The reset is active-high, and must be triggered before the next input
+            bool val = vif.solved;
+
+            uvm_info(get_full_name(), "THis works", UVM_LOW);
+            if(val)
+            {    //The reset is active-high, and must be triggered before the next input
+
+                uvm_info(get_full_name(), "Setting reset", UVM_LOW);
                 vif.reset = true;
+
+                writeln("Design has been reset");
+                //uvm_info("DRIVER", "Design has been reset", UVM_LOW);
+            }
             else
             {
+                uvm_info(get_full_name(), "Inputs going to be provided", UVM_LOW);
+
                 //The reset is set to low and the inputs are provided
                 vif.reset = false;
-                vif.a_in = comp.a;
-                vif.b_in = comp.b;
+
+                uvm_info(get_full_name(), "Lalala", UVM_LOW);
+
+                writeln(req.a);
+
+                uvm_info(get_full_name(), "reached here", UVM_LOW);
+                
+                vif.a_in = req.a;
+                vif.b_in = req.b;
+
+                writeln("Inputs have been provided");
+                //uvm_info("DRIVER", "Inputs have been provided", UVM_LOW);
             }
+
+            writeln("Task complete done, waiting for clock");
 
             //Adding delay of one clock cycle between each step to synchronize read and write
             wait(vif.clock.posedge());
@@ -224,7 +253,7 @@ class agent: uvm_agent
     this(string name, uvm_component parent = null) { super(name, parent); }
 
     driver comp_driver;
-    monitor comp_monitor;
+    //monitor comp_monitor;
     sequencer comp_sequencer;
 
     override void build_phase(uvm_phase phase)
@@ -232,7 +261,7 @@ class agent: uvm_agent
         super.build_phase(phase);
 
         comp_driver = driver.type_id.create("comp_driver", this);
-        comp_monitor = monitor.type_id.create("comp_monitor", this);
+        //comp_monitor = monitor.type_id.create("comp_monitor", this);
         comp_sequencer = sequencer.type_id.create("comp_sequencer", this);
 
         writeln("Agent is done building");
@@ -290,14 +319,14 @@ class env: uvm_env
     this(string name, uvm_component parent = null) { super(name, parent); }
 
     agent comp_agent;
-    scoreboard comp_scoreboard;
+    //scoreboard comp_scoreboard;
     
     override void build_phase(uvm_phase phase)
     {
         super.build_phase(phase);
 
         comp_agent = agent.type_id.create("comp_agent", this);
-        comp_scoreboard = scoreboard.type_id.create("comp_scoreboard", this);
+        //comp_scoreboard = scoreboard.type_id.create("comp_scoreboard", this);
 
         writeln("Environment is done building");
     }
@@ -308,7 +337,7 @@ class env: uvm_env
 
         writeln("Environment is connecting sub-components");
 
-        comp_agent.comp_monitor.mon_analysis_port.connect(comp_scoreboard.mon_analysis_imp);
+        //comp_agent.comp_monitor.mon_analysis_port.connect(comp_scoreboard.mon_analysis_imp);
 
         writeln("Environment has connected sub-components");
     }
@@ -336,8 +365,6 @@ class test: uvm_test
     
     override void run_phase(uvm_phase phase)
     {
-        seq comp_seq;
-
         writeln("Starting test");
         
         //Set duration for twhich the test will run
@@ -346,15 +373,31 @@ class test: uvm_test
 
         phase.raise_objection(this);
 
+        seq comp_seq = seq.type_id.create("comp_seq");
+
+        //uvm_info("TEST", "Test has started", UVM_LOW);
         writeln("Test has started");
 
-        comp_seq.randomize();
+        for(size_t i=0; i!=10; i++)
+        {   
+            //uvm_info("TEST", format("Generated Sequence %d", i), UVM_LOW);
+            writeln("Generated Sequence ", (i+1));
+
+            comp_seq.randomize();
+
+            auto clone_seq = cast(seq) comp_seq.clone();
+
+            clone_seq.start(comp_env.comp_agent.comp_sequencer, null);
+
+            uvm_info(get_full_name(), "Sequence has started", UVM_LOW);
+        }
+
         //Setting the path for the sequence to start: Environment -> Agent -> Sequencer
-        comp_seq.start(comp_env.comp_agent.comp_sequencer);
+        //comp_seq.start(comp_env.comp_agent.comp_sequencer);
 
         writeln("Test is complete");
 
-        writeln("Matched: %d\nErrors: %d", comp_env.comp_scoreboard.matched, comp_env.comp_scoreboard.errors);
+        // writeln("Matched: %d\nErrors: %d", comp_env.comp_scoreboard.matched, comp_env.comp_scoreboard.errors);
 
         phase.drop_objection(this);
     }
@@ -372,7 +415,7 @@ class Top: Entity
 
     intf vif;
 
-    Signal!(ubvec!1) clock, reset;
+    Signal!(ubvec!1) clock;
 
     void opentrace(string vcdname)
     {
@@ -401,7 +444,7 @@ class Top: Entity
     {
         //Clock and Reset
         vif.clock(clock);
-        vif.reset(reset);
+        vif.reset(dut.reset);
 
         //Inputs
         vif.a_in(dut.a_in);
@@ -441,6 +484,9 @@ class Top: Entity
 
             clock = true;
             dut.clock = true;
+            wait(10.nsec);
+            dut.eval();
+
             if(trace !is null) 
             {
                 trace.dump(getSimTime().getVal());
