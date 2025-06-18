@@ -1,8 +1,8 @@
 `timescale 1ns / 1ps
-`include "Single_Bit_Comparator_PowerGated.v"
+//`include "Single_Bit_Comparator_PowerGated.v"
 //////////////////////////////////////////////////////////////////////////////////
 
-module Multi_Bit_Comparator_PowerGated #(parameter n=3) (
+module Multi_Bit_Comparator_PowerGated #(parameter n=7) (
     input clock, reset,
     input [n:0] a_in, b_in,
     
@@ -47,4 +47,24 @@ module Multi_Bit_Comparator_PowerGated #(parameter n=3) (
     assign equal_to = equal[0];
     assign solved = (less_than | greater_than | equal_to);
 
+endmodule
+
+module Single_Bit_Comparator_PowerGated (
+    input enable, reset,
+    input a, b,
+    
+    output reg less_than, equal_to, greater_than    
+    );
+    
+    //This is a combinational circuit
+    //The enable line assists in power gating as this module will be duplicated in the top module
+    
+    always @ (enable) begin
+        if(reset) {less_than, equal_to, greater_than} = 3'b000;
+        else begin
+            if(a^b) {less_than, equal_to, greater_than} = {b, 1'b0, a};
+            else {less_than, equal_to, greater_than} = 3'b010;
+        end
+    end
+    
 endmodule

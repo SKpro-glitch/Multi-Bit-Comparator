@@ -18,10 +18,10 @@ clean:
 	rm -rf Multi_Bit_Comparator_PowerGated* euvm_dir obj_dir verilator.stamp
 
 run: Multi_Bit_Comparator_PowerGated
-	./Multi_Bit_Comparator_PowerGated +UVM_TESTNAME=Multi_Bit_Comparator_PowerGated.test +UVM_VERBOSITY=$(VERBOSITY) +seed=$(SEED) # +UVM_OBJECTION_TRACE
+	./Multi_Bit_Comparator_PowerGated +UVM_TESTNAME=PowerGated_Comparator_tb.test +UVM_VERBOSITY=$(VERBOSITY) +seed=$(SEED) # +UVM_OBJECTION_TRACE
 
-verilator.stamp: ../rtl/Single_Bit_Comparator_PowerGated.v \
-	../rtl/Multi_Bit_Comparator_PowerGated.v
+verilator.stamp: ../rtl/Multi_Bit_Comparator_PowerGated.v \
+	#../rtl/Single_Bit_Comparator_PowerGated.v
 	touch verilator.stamp
 	verilator --no-timing --threads 1 --trace --cc --euvm $^
 	(cd euvm_dir; g++ -c -I ../obj_dir/ -I $(VLBINDIR)/../share/verilator/include VMulti_Bit_Comparator_PowerGated_euvm_funcs.cpp)
@@ -33,7 +33,7 @@ euvm_dir/VMulti_Bit_Comparator_PowerGated_euvm.d euvm_dir/VMulti_Bit_Comparator_
 
 
 Multi_Bit_Comparator_PowerGated: ../testbench/PowerGated_Comparator_tb.d \
-	   euvm_dir/VMulti_Bit_Comparator_PowerGated.d  \
+	   euvm_dir/VMulti_Bit_Comparator_PowerGated_euvm.d  \
 	   $(LDC2BINDIR)/../import/esdl/intf/verilator/trace.d \
 	   euvm_dir/verilated_vcd_d.o euvm_dir/verilated_d.o \
 	   euvm_dir/VMulti_Bit_Comparator_PowerGated_euvm_funcs.o  \
@@ -44,4 +44,4 @@ Multi_Bit_Comparator_PowerGated: ../testbench/PowerGated_Comparator_tb.d \
 		-L-lphobos2-ldc-shared -L-ldl $^ -L-lstdc++
 
 run_overide: Multi_Bit_Comparator_PowerGated
-	./Multi_Bit_Comparator_PowerGated +UVM_TESTNAME=Multi_Bit_Comparator_PowerGated.random_test +UVM_VERBOSITY=$(VERBOSITY) +random_seed=$(SEED) +UVM_SET_TYPE_OVERRIDE=Multi_Bit_Comparator_PowerGated.item # +UVM_OBJECTION_TRACE
+	./Multi_Bit_Comparator_PowerGated +UVM_TESTNAME=Multi_Bit_Comparator_PowerGated.test +UVM_VERBOSITY=$(VERBOSITY) +seed=$(SEED) +UVM_SET_TYPE_OVERRIDE=Multi_Bit_Comparator_PowerGated.item # +UVM_OBJECTION_TRACE

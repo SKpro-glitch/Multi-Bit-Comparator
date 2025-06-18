@@ -14,7 +14,7 @@ class item: uvm_sequence_item
 
     @UVM_DEFAULT {
         //Inputs
-        @rand uint a, b;
+        @rand ubyte a, b;
 
         //Outputs
         ubvec!1 less_than, greater_than, equal_to;
@@ -34,7 +34,7 @@ class item: uvm_sequence_item
 //Sequencer
 class sequencer: uvm_sequencer!item
 {
-    //Adding utilities
+    //Adding utilitiesfor
     //Sequencer is a component, hence component_utils
     mixin uvm_component_utils;
 
@@ -44,12 +44,12 @@ class sequencer: uvm_sequencer!item
 }
 
 //Sequence
-class seq: uvm_sequence
+class seq: uvm_sequence!(item)
 {
     mixin uvm_object_utils;
 
-    //Mandatory constructor
-    this(string name, uvm_component parent = null) { super(name, parent); }
+    //Mandatory constructor, no parent for Objects
+    this(string name="") { super(name); }
 
     @rand int n;
 
@@ -114,29 +114,33 @@ class driver: uvm_driver!item
     //Naming is mandatory
     override void run_phase(uvm_phase phase)
     {
-        super.run(phase);
+        super.run_phase(phase);
 
         //Toggling the input pins as oer the design
         while(true)
         {
-            item comp;
+            item comp = item.type_id.create("comp", this);
+
+            writeln("Driver is running");
 
             //Fetching an item and storing it in allocated memory
             seq_item_port.try_next_item(comp);
+
+            writeln("Got new item");
 
             //Actual driving of them inputs
             //This can be written in another function and called also
              
             //The 'solved' control signal indicates that the operation is completed
-            if(solved)
+            if(vif.solved)
                 //The reset is active-high, and must be triggered before the next input
-                vif.reset = 1;
+                vif.reset = true;
             else
             {
                 //The reset is set to low and the inputs are provided
-                vif.reset = 0;
-                vif.a_in = comp.a_in;
-                vif.b_in = comp.b_in;
+                vif.reset = false;
+                vif.a_in = comp.a;
+                vif.b_in = comp.b;
             }
 
             //Adding delay of one clock cycle between each step to synchronize read and write
@@ -149,11 +153,16 @@ class driver: uvm_driver!item
 }
 
 //Monitor
-class monitor: uvm_monitor!item
+class monitor: uvm_monitor//!(item)
 {
     mixin uvm_component_utils;
 
     intf vif;
+
+    @UVM_BUILD
+    {
+        uvm_analysis_port!item mon_analysis_port;
+    }
 
     this(string name, uvm_component parent = null) 
     { 
@@ -164,9 +173,9 @@ class monitor: uvm_monitor!item
     }
 
     //Building the analysis port to send data out to Scoreboard
-    @UVM_BUILD
+    override void build_phase(uvm_phase phase)
     {
-        uvm_analysis_port!item mon_analysis_port;
+        super.build_phase(phase);
     }
 
     override void run_phase(uvm_phase phase)
@@ -175,6 +184,8 @@ class monitor: uvm_monitor!item
 
         while(true)
         {
+            writeln("Monitor is running");
+
             item comp;
 
             if(vif.solved)
@@ -193,8 +204,14 @@ class monitor: uvm_monitor!item
 
                 //Writing the item to the scoreboard for checking
                 mon_analysis_port.write(comp);
+
+                writeln("Comparison done");
             }
-            else wait(vif.clock.posedge());
+            else 
+            {
+                writeln("Waiting for a clock edge");
+                wait(vif.clock.posedge());
+            }
         }
     }
 }
@@ -206,18 +223,28 @@ class agent: uvm_agent
 
     this(string name, uvm_component parent = null) { super(name, parent); }
 
-    @UVM_BUILD
+    driver comp_driver;
+    monitor comp_monitor;
+    sequencer comp_sequencer;
+
+    override void build_phase(uvm_phase phase)
     {
-        driver d0;
-        monitor m0;
-        sequencer s0;
+        super.build_phase(phase);
+
+        comp_driver = driver.type_id.create("comp_driver", this);
+        comp_monitor = monitor.type_id.create("comp_monitor", this);
+        comp_sequencer = sequencer.type_id.create("comp_sequencer", this);
+
+        writeln("Agent is done building");
     }
 
     override void connect_phase(uvm_phase phase)
     {
         super.connect_phase(phase);
 
-        d0.seq_item_port.connect(s0.seq_item_export);
+        comp_driver.seq_item_port.connect(comp_sequencer.seq_item_export);
+        
+        writeln("Agent has connected sub-components");
     }
 }
 
@@ -236,6 +263,11 @@ class scoreboard: uvm_scoreboard
         uvm_analysis_imp!(scoreboard, write) mon_analysis_imp;
     }
 
+    override void build_phase(uvm_phase phase)
+    {
+        super.build_phase(phase);
+    }
+
     void write(item comp)
     {
         uint a = comp.a, b = comp.b;
@@ -244,7 +276,7 @@ class scoreboard: uvm_scoreboard
             uvm_info("MATCHED", "Comparison is Correct", UVM_LOW);
         else
         {
-            uvm_error("ERROR", "Comparison is Incorrect", UVM_LOW);
+            uvm_error("ERROR", "Comparison is Incorrect");
             writeln("Expected: less_than = %s, greater_than = %s, equal_to = %s", (a<b), (a>b), (a==b));
         }
     }
@@ -253,21 +285,32 @@ class scoreboard: uvm_scoreboard
 //Enviroment
 class env: uvm_env
 {
-    mixin uvm_componet_utils;
+    mixin uvm_component_utils;
 
     this(string name, uvm_component parent = null) { super(name, parent); }
 
-    @UVM_BUILD
-    {
-        agent a0;
-        scoreboard sb0;
-    }
+    agent comp_agent;
+    scoreboard comp_scoreboard;
     
+    override void build_phase(uvm_phase phase)
+    {
+        super.build_phase(phase);
+
+        comp_agent = agent.type_id.create("comp_agent", this);
+        comp_scoreboard = scoreboard.type_id.create("comp_scoreboard", this);
+
+        writeln("Environment is done building");
+    }
+
     override void connect_phase(uvm_phase phase)
     {
         super.connect_phase(phase);
 
-        a0.m0.mon_analysis_port.connect(sb0.mon_analysis_imp);
+        writeln("Environment is connecting sub-components");
+
+        comp_agent.comp_monitor.mon_analysis_port.connect(comp_scoreboard.mon_analysis_imp);
+
+        writeln("Environment has connected sub-components");
     }
 }
 
@@ -278,34 +321,47 @@ class test: uvm_test
 
     this(string name, uvm_component parent = null) { super(name, parent); }
 
-    @UVM_BIULD
-    {
-        env e0;
-        intf vif;
-    }
+    intf vif;
+    
+    env comp_env;
 
+    override void build_phase(uvm_phase phase)
+    {
+        super.build_phase(phase);
+
+        comp_env = env.type_id.create("comp_env", this);
+
+        writeln("Test is done building");
+    }
+    
     override void run_phase(uvm_phase phase)
     {
         seq comp_seq;
 
+        writeln("Starting test");
+        
         //Set duration for twhich the test will run
         //Since clock period is set to 20ns, a time of 200ns will read 10 clock cycles
         phase.get_objection().set_drain_time(this, 200.nsec);
 
-        phase.raise_objection();
+        phase.raise_objection(this);
+
+        writeln("Test has started");
 
         comp_seq.randomize();
         //Setting the path for the sequence to start: Environment -> Agent -> Sequencer
-        comp_seq.start(e0.a0.s0);
+        comp_seq.start(comp_env.comp_agent.comp_sequencer);
 
-        writeln("Matched: %d\nErrors: %d", e0.sb0.matched, e0.sb0.errors);
+        writeln("Test is complete");
 
-        phase.drop_objection();
+        writeln("Matched: %d\nErrors: %d", comp_env.comp_scoreboard.matched, comp_env.comp_scoreboard.errors);
+
+        phase.drop_objection(this);
     }
 }
 
-//Top
-class top: Entity
+//TopClock
+class Top: Entity
 {
     import VMulti_Bit_Comparator_PowerGated_euvm;
     import esdl.intf.verilator.verilated;
@@ -325,6 +381,8 @@ class top: Entity
             trace = new VerilatedVcdD();
             dut.trace(trace, 99);
             trace.open(vcdname);
+
+            writeln("Trace is open");
         }
     }
 
@@ -334,6 +392,8 @@ class top: Entity
         {
             trace.close();
             trace = null;
+
+            writeln("Trace is closed");
         }
     }
 
@@ -352,6 +412,8 @@ class top: Entity
         vif.greater_than(dut.greater_than);
         vif.equal_to(dut.equal_to);
         vif.solved(dut.solved);
+    
+        writeln("Interface is connected to Design");
     }
 
     override void doBuild()
@@ -359,11 +421,13 @@ class top: Entity
         dut = new DVMulti_Bit_Comparator_PowerGated();
         traceEverOn(true);
         opentrace("Multi_Bit_Comparator_PowerGated.vcd");
+
+        writeln("Design is built");
     }
 
-    Task!Clock Clock;
+    Task!stimulateClock stimulateClockTask;
 
-    void Clock()
+    void stimulateClock()
     {
         clock = false;
         for(size_t i=0; i<1000; i++)
@@ -394,26 +458,28 @@ class testbench: uvm_tb
     override void initial()
     {
         //Connecting the driver and monitor to interface
-        uvm_config_db!(intf).set(null, "uvm_test_top.env.agent.driver", "vif", top.intf);
-        uvm_config_db!(intf).set(null, "uvm_test_top.env.agent.monitor", "vif", top.intf);
+        uvm_config_db!(intf).set(null, "uvm_test_top.comp_env.comp_agent.comp_driver", "vif", top.vif);
+        uvm_config_db!(intf).set(null, "uvm_test_top.comp_env.comp_agent.comp_monitor", "vif", top.vif);
+    
+        writeln("Tetsbench has been initialized");
     }
+}
 
-    void main(string[] args)
-    {
-        import std.stdio;
+void main(string[] args)
+{
+    import std.stdio;
 
-        uint seed;
+    uint seed;
 
-        CommandLine cmdl = new CommandLine(args);
+    CommandLine cmdl = new CommandLine(args);
 
-        if(cmdl.plusArgs("seed = " ~ "%d", seed)) writeln("Using random seed: %d", seed);
-        else seed = 1;
+    if(cmdl.plusArgs("seed = " ~ "%d", seed)) writeln("Using random seed: %d", seed);
+    else seed = 1;
 
-        auto tb = new testbench;
+    auto tb = new testbench;
 
-        tb.multicore(0, 1);
-        tb.elaborate("tb", args);
-        tb.set_seed(seed);
-        tb.start();
-    }
+    tb.multicore(0, 1);
+    tb.elaborate("tb", args);
+    tb.set_seed(seed);
+    tb.start();
 }
