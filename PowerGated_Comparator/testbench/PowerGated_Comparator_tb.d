@@ -58,12 +58,13 @@ class seq: uvm_sequence!(item)
         comp = item.type_id.create("comp");
     }
 
-    @rand int n;
+    int n = 5;
 
-    constraint! q{
+/*    constraint! q{
         n > 5;
         n < 10;
     } seq_constraint;
+*/
 
     override void body()
     {
@@ -130,7 +131,7 @@ class driver: uvm_driver!(item)
             writeln("Driver is running");
 
             //Fetching an item and storing it in allocated memory
-            seq_item_port.try_next_item(req);
+            seq_item_port.get_next_item(req);
 
             uvm_info(get_type_name(), "Got new item", UVM_LOW);
 
@@ -138,39 +139,25 @@ class driver: uvm_driver!(item)
             //This can be written in another function and called also
              
             //The 'solved' control signal indicates that the operation is completed
-            bool val = vif.solved;
 
             uvm_info(get_full_name(), "THis works", UVM_LOW);
-            if(val)
-            {    //The reset is active-high, and must be triggered before the next input
 
-                uvm_info(get_full_name(), "Setting reset", UVM_LOW);
+            if(vif.solved)
+            {    //The reset is active-high, and must be triggered before the next input
                 vif.reset = true;
 
-                writeln("Design has been reset");
-                //uvm_info("DRIVER", "Design has been reset", UVM_LOW);
+                wait(vif.clock.posedge());
+                uvm_info("DRIVER", "Design has been reset", UVM_LOW);
             }
             else
             {
-                uvm_info(get_full_name(), "Inputs going to be provided", UVM_LOW);
-
                 //The reset is set to low and the inputs are provided
                 vif.reset = false;
-
-                uvm_info(get_full_name(), "Lalala", UVM_LOW);
-
-                writeln(req.a);
-
-                uvm_info(get_full_name(), "reached here", UVM_LOW);
-                
                 vif.a_in = req.a;
                 vif.b_in = req.b;
 
-                writeln("Inputs have been provided");
-                //uvm_info("DRIVER", "Inputs have been provided", UVM_LOW);
+                uvm_info("DRIVER", "Inputs have been provided", UVM_LOW);
             }
-
-            writeln("Task complete done, waiting for clock");
 
             //Adding delay of one clock cycle between each step to synchronize read and write
             wait(vif.clock.posedge());
@@ -215,7 +202,9 @@ class monitor: uvm_monitor//!(item)
         {
             writeln("Monitor is running");
 
-            item comp;
+            wait(vif.clock.posedge());
+
+            item comp = item.type_id.create("comp");
 
             if(vif.solved)
             {
@@ -229,17 +218,12 @@ class monitor: uvm_monitor//!(item)
                 comp.equal_to = vif.equal_to;
 
                 //Printing item for reference
-                comp.sprint();
+                uvm_info("MONITOR", comp.sprint(), UVM_LOW);
 
                 //Writing the item to the scoreboard for checking
                 mon_analysis_port.write(comp);
 
-                writeln("Comparison done");
-            }
-            else 
-            {
-                writeln("Waiting for a clock edge");
-                wait(vif.clock.posedge());
+                uvm_info("MONITOR", "Comparison done", UVM_LOW);
             }
         }
     }
@@ -253,7 +237,7 @@ class agent: uvm_agent
     this(string name, uvm_component parent = null) { super(name, parent); }
 
     driver comp_driver;
-    //monitor comp_monitor;
+    monitor comp_monitor;
     sequencer comp_sequencer;
 
     override void build_phase(uvm_phase phase)
@@ -261,10 +245,10 @@ class agent: uvm_agent
         super.build_phase(phase);
 
         comp_driver = driver.type_id.create("comp_driver", this);
-        //comp_monitor = monitor.type_id.create("comp_monitor", this);
+        comp_monitor = monitor.type_id.create("comp_monitor", this);
         comp_sequencer = sequencer.type_id.create("comp_sequencer", this);
 
-        writeln("Agent is done building");
+        uvm_info("AGENT", "Agent is done building", UVM_LOW);
     }
 
     override void connect_phase(uvm_phase phase)
@@ -273,7 +257,7 @@ class agent: uvm_agent
 
         comp_driver.seq_item_port.connect(comp_sequencer.seq_item_export);
         
-        writeln("Agent has connected sub-components");
+        uvm_info("AGENT", "Agent has connected sub-components", UVM_LOW);
     }
 }
 
@@ -306,7 +290,7 @@ class scoreboard: uvm_scoreboard
         else
         {
             uvm_error("ERROR", "Comparison is Incorrect");
-            writeln("Expected: less_than = %s, greater_than = %s, equal_to = %s", (a<b), (a>b), (a==b));
+            writeln("Expected: \n less_than = ", (a<b), "\n greater_than = ", (a>b), "\n equal_to = ", (a==b));
         }
     }
 }
@@ -319,25 +303,23 @@ class env: uvm_env
     this(string name, uvm_component parent = null) { super(name, parent); }
 
     agent comp_agent;
-    //scoreboard comp_scoreboard;
+    scoreboard comp_scoreboard;
     
     override void build_phase(uvm_phase phase)
     {
         super.build_phase(phase);
 
         comp_agent = agent.type_id.create("comp_agent", this);
-        //comp_scoreboard = scoreboard.type_id.create("comp_scoreboard", this);
+        comp_scoreboard = scoreboard.type_id.create("comp_scoreboard", this);
 
-        writeln("Environment is done building");
+        uvm_info("ENVIRONMENT", "Environment is done building", UVM_LOW);
     }
 
     override void connect_phase(uvm_phase phase)
     {
         super.connect_phase(phase);
 
-        writeln("Environment is connecting sub-components");
-
-        //comp_agent.comp_monitor.mon_analysis_port.connect(comp_scoreboard.mon_analysis_imp);
+        comp_agent.comp_monitor.mon_analysis_port.connect(comp_scoreboard.mon_analysis_imp);
 
         writeln("Environment has connected sub-components");
     }
@@ -375,10 +357,13 @@ class test: uvm_test
 
         seq comp_seq = seq.type_id.create("comp_seq");
 
-        //uvm_info("TEST", "Test has started", UVM_LOW);
-        writeln("Test has started");
+        uvm_info("TEST", "Test has started", UVM_LOW);
+        
+        comp_seq.randomize();
+        comp_seq.start(comp_env.comp_agent.comp_sequencer, null);
+        //uvm_info(get_full_name(), "Sequence has started", UVM_LOW);
 
-        for(size_t i=0; i!=10; i++)
+/*        for(size_t i=0; i!=10; i++)
         {   
             //uvm_info("TEST", format("Generated Sequence %d", i), UVM_LOW);
             writeln("Generated Sequence ", (i+1));
@@ -391,13 +376,13 @@ class test: uvm_test
 
             uvm_info(get_full_name(), "Sequence has started", UVM_LOW);
         }
-
+*/
         //Setting the path for the sequence to start: Environment -> Agent -> Sequencer
-        //comp_seq.start(comp_env.comp_agent.comp_sequencer);
+        comp_seq.start(comp_env.comp_agent.comp_sequencer);
 
-        writeln("Test is complete");
+        uvm_info("TEST", "Test is complete", UVM_LOW);
 
-        // writeln("Matched: %d\nErrors: %d", comp_env.comp_scoreboard.matched, comp_env.comp_scoreboard.errors);
+        uvm_info("RESULT", format("Matched: %d\nErrors: %d", comp_env.comp_scoreboard.matched, comp_env.comp_scoreboard.errors), UVM_LOW);
 
         phase.drop_objection(this);
     }
@@ -442,11 +427,11 @@ class Top: Entity
 
     override void doConnect()
     {
-        //Clock and Reset
+        //Clock
         vif.clock(clock);
-        vif.reset(dut.reset);
 
         //Inputs
+        vif.reset(dut.reset);
         vif.a_in(dut.a_in);
         vif.b_in(dut.b_in);
         
@@ -473,18 +458,18 @@ class Top: Entity
     void stimulateClock()
     {
         clock = false;
-        for(size_t i=0; i<1000; i++)
+        for(size_t i=0; i<10; i++)
         {
             clock = false;
             dut.clock = false;
 
-            wait(10.nsec);
+            wait(5.nsec);
             dut.eval();
             if(trace !is null) trace.dump(getSimTime().getVal());
 
             clock = true;
             dut.clock = true;
-            wait(10.nsec);
+            wait(5.nsec);
             dut.eval();
 
             if(trace !is null) 
