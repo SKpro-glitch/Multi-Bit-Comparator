@@ -79,7 +79,7 @@ class seq: uvm_sequence!(item)
             send_request(cloned);
         }
 
-        uvm_info("SEQ", format("%d ITEMS GENERATED", n), UVM_LOW);
+        //uvm_info("SEQ", format("%d ITEMS GENERATED", n), UVM_LOW);
     }
 }
 
@@ -133,16 +133,15 @@ class driver: uvm_driver!(item)
             //Fetching an item and storing it in allocated memory
             seq_item_port.get_next_item(req);
 
-            uvm_info(get_type_name(), "Got new item", UVM_LOW);
+            //uvm_info(get_type_name(), "Got new item", UVM_LOW);
 
             //Actual driving of them inputs
             //This can be written in another function and called also
              
             //The 'solved' control signal indicates that the operation is completed
 
-            uvm_info(get_full_name(), "THis works", UVM_LOW);
-
-            if(vif.solved)
+            
+        /*            if(vif.solved)
             {    //The reset is active-high, and must be triggered before the next input
                 vif.reset = true;
 
@@ -158,10 +157,22 @@ class driver: uvm_driver!(item)
 
                 uvm_info("DRIVER", "Inputs have been provided", UVM_LOW);
             }
+            */
+            
+                vif.reset = true;
 
-            //Adding delay of one clock cycle between each step to synchronize read and write
-            wait(vif.clock.posedge());
+                wait(vif.clock.posedge());
+                //wait(vif.clock.negedge());
 
+                vif.reset = false;
+                vif.a_in = req.a;
+                vif.b_in = req.b;
+
+                //uvm_info("DRIVER", "Inputs have been provided", UVM_LOW);
+            
+                //Adding delay of one clock cycle between each step to synchronize read and write
+                wait(vif.clock.posedge());
+            
             //Declaring the item as done so that it can proceed to the next step
             seq_item_port.item_done();
         }
@@ -200,31 +211,25 @@ class monitor: uvm_monitor//!(item)
 
         while(true)
         {
-            writeln("Monitor is running");
-
+            wait(vif.clock.posedge());
             wait(vif.clock.posedge());
 
             item comp = item.type_id.create("comp");
 
-            if(vif.solved)
-            {
-                //Reading the input values for reference
-                comp.a = vif.a_in;
-                comp.b = vif.b_in;
+            //Reading the input values for reference
+            comp.a = vif.a_in;
+            comp.b = vif.b_in;
 
-                //Reading the output values for checking
-                comp.less_than = vif.less_than;
-                comp.greater_than = vif.greater_than;
-                comp.equal_to = vif.equal_to;
+            //Reading the output values for checking
+            comp.less_than = vif.less_than;
+            comp.greater_than = vif.greater_than;
+            comp.equal_to = vif.equal_to;
 
-                //Printing item for reference
-                uvm_info("MONITOR", comp.sprint(), UVM_LOW);
+            //Printing item for reference
+            uvm_info("MONITOR", comp.sprint(), UVM_LOW);
 
-                //Writing the item to the scoreboard for checking
-                mon_analysis_port.write(comp);
-
-                uvm_info("MONITOR", "Comparison done", UVM_LOW);
-            }
+            //Writing the item to the scoreboard for checking
+            mon_analysis_port.write(comp);
         }
     }
 }
@@ -248,7 +253,7 @@ class agent: uvm_agent
         comp_monitor = monitor.type_id.create("comp_monitor", this);
         comp_sequencer = sequencer.type_id.create("comp_sequencer", this);
 
-        uvm_info("AGENT", "Agent is done building", UVM_LOW);
+        //uvm_info("AGENT", "Agent is done building", UVM_LOW);
     }
 
     override void connect_phase(uvm_phase phase)
@@ -257,7 +262,7 @@ class agent: uvm_agent
 
         comp_driver.seq_item_port.connect(comp_sequencer.seq_item_export);
         
-        uvm_info("AGENT", "Agent has connected sub-components", UVM_LOW);
+        uvm_info("AGENT", "Agent has connected sub-components", UVM_HIGH);
     }
 }
 
@@ -285,13 +290,12 @@ class scoreboard: uvm_scoreboard
     {
         uint a = comp.a, b = comp.b;
 
+        uvm_info("SCOREBOARD", "Expected: \n less_than = ", (a<b), "\n greater_than = ", (a>b), "\n equal_to = ", (a==b));
+        
         if(comp.less_than == (a<b) && comp.greater_than == (a>b) && comp.equal_to == (a==b))
             uvm_info("MATCHED", "Comparison is Correct", UVM_LOW);
         else
-        {
             uvm_error("ERROR", "Comparison is Incorrect");
-            writeln("Expected: \n less_than = ", (a<b), "\n greater_than = ", (a>b), "\n equal_to = ", (a==b));
-        }
     }
 }
 
@@ -312,7 +316,7 @@ class env: uvm_env
         comp_agent = agent.type_id.create("comp_agent", this);
         comp_scoreboard = scoreboard.type_id.create("comp_scoreboard", this);
 
-        uvm_info("ENVIRONMENT", "Environment is done building", UVM_LOW);
+        //uvm_info("ENVIRONMENT", "Environment is done building", UVM_LOW);
     }
 
     override void connect_phase(uvm_phase phase)
@@ -357,13 +361,16 @@ class test: uvm_test
 
         seq comp_seq = seq.type_id.create("comp_seq");
 
-        uvm_info("TEST", "Test has started", UVM_LOW);
+        //uvm_info("TEST", "Test has started", UVM_LOW);
         
         comp_seq.randomize();
         comp_seq.start(comp_env.comp_agent.comp_sequencer, null);
-        //uvm_info(get_full_name(), "Sequence has started", UVM_LOW);
 
-/*        for(size_t i=0; i!=10; i++)
+        //Setting the path for the sequence to start: Environment -> Agent -> Sequencer
+        comp_seq.start(comp_env.comp_agent.comp_sequencer);
+
+        /*
+        for(size_t i=0; i!=10; i++)
         {   
             //uvm_info("TEST", format("Generated Sequence %d", i), UVM_LOW);
             writeln("Generated Sequence ", (i+1));
@@ -376,13 +383,11 @@ class test: uvm_test
 
             uvm_info(get_full_name(), "Sequence has started", UVM_LOW);
         }
-*/
-        //Setting the path for the sequence to start: Environment -> Agent -> Sequencer
-        comp_seq.start(comp_env.comp_agent.comp_sequencer);
+        */
 
-        uvm_info("TEST", "Test is complete", UVM_LOW);
+        //uvm_info("TEST", "Test is complete", UVM_LOW);
 
-        uvm_info("RESULT", format("Matched: %d\nErrors: %d", comp_env.comp_scoreboard.matched, comp_env.comp_scoreboard.errors), UVM_LOW);
+        //uvm_info("RESULT", format("Matched: %d\nErrors: %d", comp_env.comp_scoreboard.matched, comp_env.comp_scoreboard.errors), UVM_LOW);
 
         phase.drop_objection(this);
     }
