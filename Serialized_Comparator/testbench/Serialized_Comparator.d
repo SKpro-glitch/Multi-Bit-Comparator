@@ -57,17 +57,20 @@ class seq: uvm_sequence!(item)
     this(string name="") { super(name); }
 
     //Number of sequences
-    @rand int n; 
+    int n=5;
     /** 
      * Can be randomized also, fixed also
      It is randomized when applicable in multi-cycle designs, or data streams
      Example: FIFO, Avalon stream etc.
      */
 
+    /*
+    @rand int n; 
     constraint! q{
         n > 5;
         n < 10;
     } seq_constraint;
+    */
 
     //Functions that need to be overridden are in-built
     //Their names should not be changed
@@ -80,7 +83,7 @@ class seq: uvm_sequence!(item)
             wait_for_grant();
             comp.randomize();
 
-            uvm_info("SEQ", format("Generated Item No. ", i), UVM_HIGH);
+            uvm_info("SEQ", format("Generated Item No. %d", i), UVM_HIGH);
 
             /** 
              * Cloning of item is not necessary
@@ -229,20 +232,23 @@ class monitor: uvm_monitor//!(item)
              This can also be put inside a loop if needed
              */
             
-            //Reading the input values for reference
-            comp.a = vif.a_in;
-            comp.b = vif.b_in;
+            if(vif.solved)
+            {
+                //Reading the input values for reference
+                comp.a = vif.a_in;
+                comp.b = vif.b_in;
 
-            //Reading the output values for checking
-            comp.less_than = vif.less_than;
-            comp.greater_than = vif.greater_than;
-            comp.equal_to = vif.equal_to;
+                //Reading the output values for checking
+                comp.less_than = vif.less_than;
+                comp.greater_than = vif.greater_than;
+                comp.equal_to = vif.equal_to;
 
-            //Printing item for reference and manual verification
-            uvm_info("MONITOR", comp.sprint(), UVM_LOW);
+                //Printing item for reference and manual verification
+                uvm_info("MONITOR", comp.sprint(), UVM_LOW);
 
-            //Writing the item to the scoreboard for checking
-            mon_analysis_port.write(comp);
+                //Writing the item to the scoreboard for checking
+                mon_analysis_port.write(comp);
+            }
         }
     }
 }
@@ -309,7 +315,7 @@ class scoreboard: uvm_scoreboard
         uint a = comp.a, b = comp.b;
 
         //Printing expected values
-        uvm_info("SCOREBOARD", format("Expected: \n less_than = ", (a<b), "\n greater_than = ", (a>b), "\n equal_to = ", (a==b)), UVM_LOW);
+        //uvm_info("SCOREBOARD", format("Expected: \n less_than = ", (a<b), "\n greater_than = ", (a>b), "\n equal_to = ", (a==b)), UVM_LOW);
         
         //Actual checking of output values by comparing with expected values
         if(comp.less_than == (a<b) && comp.greater_than == (a>b) && comp.equal_to == (a==b))
@@ -460,7 +466,7 @@ class Top: Entity
         vif.equal_to(dut.equal_to);
         vif.solved(dut.solved);
     
-        uvm_info("TOP", "Interface is connected to Design", UVM_HIGH);
+        //uvm_info("TOP", "Interface is connected to Design", UVM_HIGH);
     }
 
     //Building the verilated design file
@@ -478,7 +484,7 @@ class Top: Entity
         clock = false;
 
         //Clock can be set to run for a fixed number of cycles
-        for(size_t i=0; i<10; i++)
+        for(size_t i=0; i<100; i++)
         {
             clock = false;
             dut.clock = false;
