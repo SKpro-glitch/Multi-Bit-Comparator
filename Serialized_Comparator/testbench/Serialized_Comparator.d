@@ -1,444 +1,537 @@
-module Serialized_Comparator_tb;
-
-import std.stdio;
-import std.string: format;
 import esdl;
 import esdl.intf.verilator.verilated;
 import esdl.intf.verilator.trace;
 import uvm;
-import VSerialized_Comparator_euvm;
+import std.stdio;
+import std.string: format;
 
-void main(string[] args)
+//Item
+// This is the base transaction object that will be used in the environment to initiate new transactions and capture transactions at DUT interface
+class item: uvm_sequence_item
 {
-    uint random_seed;
+    //Adding utilities
+    //Item is an object, hence 'uvm_object_utils'
+    mixin uvm_object_utils;
 
-    CommandLine cmdl =  new CommandLine(args);
+    @UVM_DEFAULT {
+        //Inputs - randomized
+        @rand ubyte a, b;
 
+        //Outputs - not randomized
+        ubvec!1 less_than, greater_than, equal_to;
+    }
 
-    if (cmdl.plusArgs("random_seed=" ~ "%d", random_seed))
-        writeln("Using random_seed: ", random_seed);
-    else random_seed = 1;
+    //Mandatory constructor to initialize class
+    //Object will not have a parent 
+    this(string name ="item") { super(name); }
 
-    auto tb = new testbench;
-    tb.multicore(0, 1);
-    tb.elaborate("tb", args);
-    tb.set_seed(random_seed);
-    tb.start();
+    //No constraints needed for this design
+    constraint! q{} comp_constraints;
 }
 
-class testbench: uvm_tb
+//Sequencer
+//The sequencer is a mediator who establishes a connection between sequence and driver
+class sequencer: uvm_sequencer!item
 {
-    Top top;
+    //Adding utilities
+    //Sequencer is a component, hence component_utils
+    mixin uvm_component_utils;
 
-    override void initial()
+    //Mandatory constructor to initialize class
+    //Components will always have a parent 
+    this(string name, uvm_component parent=null) { super(name, parent); }
+
+    //No phases needed for Sequencer
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Sequence
+//The main sequence that forms the stimulus and randomizer aspect of the testbench
+class seq: uvm_sequence!(item)
+{
+    mixin uvm_object_utils;
+
+    item comp;
+    
+    //Mandatory constructor, no parent for Objects
+    this(string name="") { super(name); }
+
+    //Number of sequences
+    @rand int n; 
+    /** 
+     * Can be randomized also, fixed also
+     It is randomized when applicable in multi-cycle designs, or data streams
+     Example: FIFO, Avalon stream etc.
+     */
+
+    constraint! q{
+        n > 5;
+        n < 10;
+    } seq_constraint;
+
+    //Functions that need to be overridden are in-built
+    //Their names should not be changed
+    override void body()
     {
-        uvm_config_db!(comp_in_intf).set(null, "uvm_test_top.env.agent.driver", "comp_in", top.compin);
-        uvm_config_db!(comp_out_intf).set(null, "uvm_test_top.env.agent.driver", "comp_out", top.compout);
-        ///////////////////////////////////////////////////////////////////
+        comp = item.type_id.create("comp");
+
+        for(int i=0; i<n; i++)
+        {
+            wait_for_grant();
+            comp.randomize();
+
+            uvm_info("SEQ", format("Generated Item No. ", i), UVM_HIGH);
+
+            /** 
+             * Cloning of item is not necessary
+             It is useful when making a reference model
+             Cloned item is sent to driver and Original is sent to scoreboard
+             No reference model made here
+             */
+            item cloned = cast(item) comp.clone;
+            send_request(cloned);
+        }
+
+        uvm_info("SEQ", format("%d ITEMS GENERATED", n), UVM_LOW);
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Interface
+//Interface allows verification components to access DUT signals using a virtual interface handle
+//Interface is virtual for dynamic instantiation 
+class intf: VlInterface
+{
+    //Fixed ports - posedge and negedge can be checked only on these
+    Port!(Signal!(ubvec!1)) clock;
+    
+    //Verilated Ports - Posedge / Negedge cannot be checked on these
+    
+    //Input ports - Verilated
+    VlPort!1 reset;
+    VlPort!8 a_in, b_in;
+
+    //Output ports - Verilated
+    VlPort!1 less_than, greater_than, equal_to, solved;
+
+    //Clocking block, like that in SystemVerilog, is not required here
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Driver
+//Drives oinputs of the Design Under Test (DUT)
+class driver: uvm_driver!(item)
+{
+    mixin uvm_component_utils;
+
+    //Instantiating a virtual interface
+    intf vif;
+
+    //Mandatory constructor
+    this(string name, uvm_component parent = null)
+    {
+        super(name, parent);
+
+        //Verifying that the virtual interface is instantiated successfully 
+        uvm_config_db!intf.get(this, "", "vif", vif);
+        assert(vif !is null);
+    }
+
+    //Build phase - Nothing to build in the Driver
+    //override void build() {}
+    
+    //Run phase - driving the input values
+    //Overridden function, consistent naming is mandatory
+    override void run_phase(uvm_phase phase)
+    {
+        //Passing the phase to the parent class
+        super.run_phase(phase);
+
+        //Toggling the input pins as per the design
+        //Always inside an infinite loop
+        while(true)
+        {
+            uvm_info("DRIVER", "Driver is running", UVM_HIGH);
+
+            //Fetching an item and storing it in allocated memory
+            seq_item_port.get_next_item(req);
+            //The item 'req' is a built-in item which takes the value of the item originally passed as argument to the UVM class
+
+            uvm_info(get_type_name(), "Got new item", UVM_MEDIUM);
+
+            //Actual driving of them inputs
+            //This can be written in another function and called also
+            
+            //Design-specific requirement: The design must be reset before every new input
+            vif.reset = true;
+
+            //One clock cycle is needed for the reset to be evaluated
+            wait(vif.clock.posedge());
+            
+            //Setting the active-high reset back to low and passing the inputs
+            vif.reset = false;
+            vif.a_in = req.a;
+            vif.b_in = req.b;
+
+            uvm_info("DRIVER", "Inputs have been provided", UVM_MEDIUM);
+            
+            //Waiting one clock cycle before resetting again 
+            wait(vif.clock.posedge());
+            
+            //Declaring the item as done so that it can proceed to the next step
+            seq_item_port.item_done();
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Monitor
+//Fetches and reads output from the DUT
+class monitor: uvm_monitor//!(item)
+{
+    mixin uvm_component_utils;
+
+    intf vif;
+
+    //The UVM_BIULD syntax simplifies and automates the build phase
+    //Useful for simple things like ports
+    @UVM_BUILD
+    {
+        //The analysis port takes the output values and sends them to the scoreboard for evaluation
+        uvm_analysis_port!item mon_analysis_port;
+    }
+
+    this(string name, uvm_component parent = null) 
+    { 
+        super(name, parent);
+
+        uvm_config_db!intf.get(this, "", "vif", vif); 
+        assert(vif !is null);
+    }
+
+    //The build_phase function is more customizable than UVM_BUILD
+    //override void build_phase(uvm_phase phase) {}
+
+    override void run_phase(uvm_phase phase)
+    {
+        super.run_phase(phase);
+
+            //Instantiating new item to fetch the values from interface
+            item comp = item.type_id.create("comp");
+
+        while(true)
+        {
+            //Waiting 2 clock cycles - 1 for reset, 1 for input
+            wait(vif.clock.posedge());
+            wait(vif.clock.posedge());
+            /** 
+             * Synchronization of clock cycles is design specific
+             This can also be put inside a loop if needed
+             */
+            
+            //Reading the input values for reference
+            comp.a = vif.a_in;
+            comp.b = vif.b_in;
+
+            //Reading the output values for checking
+            comp.less_than = vif.less_than;
+            comp.greater_than = vif.greater_than;
+            comp.equal_to = vif.equal_to;
+
+            //Printing item for reference and manual verification
+            uvm_info("MONITOR", comp.sprint(), UVM_LOW);
+
+            //Writing the item to the scoreboard for checking
+            mon_analysis_port.write(comp);
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Agent
+//Containerize the sequencer, driver and monitor on to a common platform
+class agent: uvm_agent
+{
+    mixin uvm_component_utils;
+
+    this(string name, uvm_component parent = null) { super(name, parent); }
+
+    driver comp_driver;
+    monitor comp_monitor;
+    sequencer comp_sequencer;
+
+    override void build_phase(uvm_phase phase)
+    {
+        super.build_phase(phase);
+
+        //All sub-components must be intantiated in the build phase
+        comp_driver = driver.type_id.create("comp_driver", this);
+        comp_monitor = monitor.type_id.create("comp_monitor", this);
+        comp_sequencer = sequencer.type_id.create("comp_sequencer", this);
+
+        uvm_info("AGENT", "Agent is done building", UVM_HIGH);
+    }
+
+    //Connect phase connects the sub-components as required
+    override void connect_phase(uvm_phase phase)
+    {
+        super.connect_phase(phase);
+
+        //Connecting the sequencer to driver
+        comp_driver.seq_item_port.connect(comp_sequencer.seq_item_export);
+        
+        uvm_info("AGENT", "Agent has connected sub-components", UVM_HIGH);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Scoreboard
+//Evaluates the output of the DUT
+class scoreboard: uvm_scoreboard
+{
+    mixin uvm_component_utils;
+
+    this(string name, uvm_component parent = null) { super(name, parent); }
+
+    @UVM_BUILD
+    {
+        //Building the analysis port to receive data from the Monitor
+        //Add the class and function to which the port will send data
+        uvm_analysis_imp!(scoreboard, write) mon_analysis_imp;
+        //Imp is a final port i.e. it will not pass the data to another port
+    }
+
+    //override void build_phase(uvm_phase phase) {}
+
+    void write(item comp)
+    {
+        //Reassigning varialble names for simplicity of coding
+        uint a = comp.a, b = comp.b;
+
+        //Printing expected values
+        uvm_info("SCOREBOARD", format("Expected: \n less_than = ", (a<b), "\n greater_than = ", (a>b), "\n equal_to = ", (a==b)), UVM_LOW);
+        
+        //Actual checking of output values by comparing with expected values
+        if(comp.less_than == (a<b) && comp.greater_than == (a>b) && comp.equal_to == (a==b))
+            uvm_info("MATCHED", "Comparison is Correct", UVM_LOW);
+        else
+            uvm_error("ERROR", "Comparison is Incorrect");
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Enviroment
+//Responsible for instantiating and connecting all testbench components
+class env: uvm_env
+{
+    mixin uvm_component_utils;
+
+    this(string name, uvm_component parent = null) { super(name, parent); }
+
+    agent comp_agent;
+    scoreboard comp_scoreboard;
+    
+    override void build_phase(uvm_phase phase)
+    {
+        super.build_phase(phase);
+
+        comp_agent = agent.type_id.create("comp_agent", this);
+        comp_scoreboard = scoreboard.type_id.create("comp_scoreboard", this);
+
+        uvm_info("ENVIRONMENT", "Environment is done building", UVM_HIGH);
+    }
+
+    override void connect_phase(uvm_phase phase)
+    {
+        super.connect_phase(phase);
+
+        //Connecting the analysis port of the monitor to the analysis port in the scoreboard
+        comp_agent.comp_monitor.mon_analysis_port.connect(comp_scoreboard.mon_analysis_imp);
+
+        uvm_info("ENVIRONMENT", "Environment has connected sub-components", UVM_HIGH);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Test
+//Instantiates an environment, sets up virtual interface handles for sub components and starts a top level sequence
+class test: uvm_test
+{
+    mixin uvm_component_utils;
+
+    this(string name, uvm_component parent = null) { super(name, parent); }
+
+    intf vif;
+    
+    env comp_env;
+
+    override void build_phase(uvm_phase phase)
+    {
+        super.build_phase(phase);
+
+        comp_env = env.type_id.create("comp_env", this);
+
+        uvm_info("TEST", "Test is done building", UVM_HIGH);
+    }
+    
+    override void run_phase(uvm_phase phase)
+    {
+        uvm_info("TEST", "Starting test", UVM_MEDIUM);
+        
+        //Set maximum duration for which the test will run
+        phase.get_objection().set_drain_time(this, 200.nsec);
+
+        //Object is created
+        phase.raise_objection(this);
+
+        seq comp_seq = seq.type_id.create("comp_seq");
+
+        uvm_info("TEST", "Test has started", UVM_MEDIUM);
+        
+        //Sequence is randomized
+        comp_seq.randomize();
+        
+        //Setting the path for the sequence to start: Environment -> Agent -> Sequencer
+        comp_seq.start(comp_env.comp_agent.comp_sequencer);
+
+        uvm_info("TEST", "Test is complete", UVM_MEDIUM);
+
+        //Object is killed
+        phase.drop_objection(this);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Top
+//Top of testbench, actually starts the testbench and instantiates the design module
 class Top: Entity
 {
-    //Initializing Verilator to obtain the trace
+    import VSerialized_Comparator_euvm;
+    import esdl.intf.verilator.verilated;
+    import std.stdio;
+
     VerilatedVcdD trace;
-
-    ///Declaring unsigned bit signals for clock and reset
-    Signal!(ubvec!1) clock;
-    Signal!(ubvec!1) reset;
-
-    //Declaring the design Under test (DUT) to be read after going through verilator
     DVSerialized_Comparator dut;
 
-    comp_in_intf compin;
-    comp_out_intf compout;
+    intf vif;
 
-    void openTrace(string vcdname)
+    //Clock is being driven from this class
+    Signal!(ubvec!1) clock;
+
+    //Opening Verilated trace
+    void opentrace(string vcdname)
     {
         if(trace is null)
         {
             trace = new VerilatedVcdD();
             dut.trace(trace, 99);
             trace.open(vcdname);
+
+            writeln("Trace is open");
         }
     }
 
-    void closeTrace()
+    //Closing Verilated trace
+    void closetrace()
     {
         if(trace !is null)
         {
             trace.close();
             trace = null;
+
+            writeln("Trace is closed");
         }
     }
 
+    //Connecting the Interface to the Design 
     override void doConnect()
     {
-        //Input connections
-        compin.clock(clock);
-        compin.reset(reset);
+        //Clock
+        vif.clock(clock);
 
-        compin.a_in(dut.a_in);
-        compin.b_in(dut.b_in);
-
-        //Output connections
-        compout.clock(clock);
-        compout.reset(reset);
-
-    //    compout.phrase((dut.less_than ~ dut.equal_to ~ dut.greater_than));
-        compout.less_than(dut.less_than);
-        compout.equal_to(dut.equal_to);
-        compout.greater_than(dut.greater_than);
+        //Inputs
+        vif.reset(dut.reset);
+        vif.a_in(dut.a_in);
+        vif.b_in(dut.b_in);
+        
+        //Outputs
+        vif.less_than(dut.less_than);
+        vif.greater_than(dut.greater_than);
+        vif.equal_to(dut.equal_to);
+        vif.solved(dut.solved);
+    
+        uvm_info("TOP", "Interface is connected to Design", UVM_HIGH);
     }
 
+    //Building the verilated design file
     override void doBuild()
     {
         dut = new DVSerialized_Comparator();
         traceEverOn(true);
-        openTrace("Serialized_Comparator.vcd");
+        opentrace("Serialized_Comparator.vcd");
     }
 
     Task!stimulateClock stimulateClockTask;
-    Task!stimulateReset stimulateResetTask;
 
     void stimulateClock()
     {
         clock = false;
-        
-        for(size_t i=1; i<10000; i++)
+
+        //Clock can be set to run for a fixed number of cycles
+        for(size_t i=0; i<10; i++)
         {
             clock = false;
-            dut.clk = false;
+            dut.clock = false;
 
-            wait (2.nsec);
+            wait(5.nsec);
+            dut.eval();
+            if(trace !is null) trace.dump(getSimTime().getVal());
+
+            clock = true;
+            dut.clock = true;
+            wait(5.nsec);
             dut.eval();
 
-            wait(8.nsec);
-            clock = true;
-            dut.clk = true;
-
-            wait(2.nsec);
-            dut.eval;
-            wait(8.nsec);
-        }
-    }
-
-    void stimulateReset()
-    {
-        reset = true;
-        dut.reset = true;
-
-        wait (30.nsec);
-
-        reset = false;
-        dut.reset = false;
-    }
-}
-
-class comp_in_intf: VlInterface
-{
-    //Interface to for input ports of the design
-    Port!(Signal!(ubvec!1)) clock;
-    Port!(Signal!(ubvec!1)) reset;
-
-    VlPort!4 a_in, b_in;
-}
-
-class comp_out_intf: VlInterface
-{
-    //Interface for output ports of the design
-    Port!(Signal!(ubvec!1)) clock;
-    Port!(Signal!(ubvec!1)) reset;
-
-    VlPort!1 less_than, equal_to, greater_than; //phrase;
-    VlPort!1 solved;
-}
-
-class comp_env: uvm_env
-{
-    mixin uvm_component_utils;
-
-    @UVM_BUILD private comp_agent agent;
-
-    this(string name, uvm_component parent) { super(name, parent); }
-}
-
-class random_test: uvm_test
-{
-    mixin uvm_component_utils;
-
-    this(string name, uvm_component parent) { super(name, parent); }
-
-    @UVM_BUILD { comp_env env; }
-
-  
-    override void run_phase(uvm_phase phase) 
-    {
-        phase.get_objection().set_drain_time(this, 100.nsec);
-        phase.raise_objection(this);
-        comp_seq rand_sequence = comp_seq.type_id.create("comp_seq");
-
-        for (size_t i=0; i!=100; ++i) 
-        {
-            rand_sequence.randomize();
-            auto sequence = cast(comp_seq) rand_sequence.clone();
-            sequence.start(env.agent.sequencer, null);
-        }
-        
-        phase.drop_objection(this);
-    }
-}
-
-class comp_agent: uvm_agent
-{
-
-  @UVM_BUILD {
-    comp_sequencer sequencer;
-    comp_driver    driver;
-    
-    comp_monitor   req_monitor;
-    comp_monitor   rsp_monitor;
-
-    comp_scoreboard   scoreboard;
-  }
-  
-  mixin uvm_component_utils;
-   
-  this(string name, uvm_component parent = null) {
-    super(name, parent);
-  }
-
-  override void connect_phase(uvm_phase phase) {
-    driver.seq_item_port.connect(sequencer.seq_item_export);
-    req_monitor.egress.connect(scoreboard.req_analysis);
-    rsp_monitor.egress.connect(scoreboard.rsp_analysis);
-  }
-}
-
-class comp_sequencer: uvm_sequencer!comp_item
-{
-  mixin uvm_component_utils;
-
-  this(string name, uvm_component parent=null) { super(name, parent); }
-}
-
-class comp_monitor: uvm_monitor
-{
-
-    mixin uvm_component_utils;
-    
-    @UVM_BUILD 
-    {
-        uvm_analysis_port!comp_seq egress;
-        uvm_analysis_imp!(comp_monitor, write) ingress;
-    }
-
-    this(string name, uvm_component parent = null) 
-    { super(name, parent); }
-
-    comp_item seq;
-
-    void write(comp_item item) 
-    {
-        if (seq is null)
-            seq = comp_item.type_id.create("comp_seq");
-        
-        seq = item;
-        
-        if (seq.solved) 
-        {
-            uvm_info("Monitor", "Got Seq " ~ seq.sprint(), UVM_DEBUG);
-            egress.write(seq);
-            seq = null;
-        }
-    }
-}
-
-class comp_scoreboard: uvm_scoreboard
-{
-    this(string name, uvm_component parent = null) { super(name, parent); }
-
-    mixin uvm_component_utils;
-
-    uvm_phase phase_run;
-
-    uint matched;
-
-    comp_seq[] req_queue;
-    comp_seq[] rsp_queue;
-
-    @UVM_BUILD 
-    {
-        uvm_analysis_imp!(comp_scoreboard, write_req) req_analysis;
-        uvm_analysis_imp!(comp_scoreboard, write_rsp) rsp_analysis;
-    }
-
-    override void run_phase(uvm_phase phase) 
-    {
-        phase_run = phase;
-        auto imp = phase.get_imp();
-        assert(imp !is null);
-        uvm_wait_for_ever();
-    }
-
-    void write_req(comp_seq seq) 
-    {
-        uvm_info("Monitor", "Got req item", UVM_DEBUG);
-        
-        req_queue ~= seq;
-        assert(phase_run !is null);
-        
-        phase_run.raise_objection(this);
-    }
-
-    void write_rsp(comp_seq seq) 
-    {
-        uvm_info("Monitor", "Got rsp item", UVM_DEBUG);
-        
-        rsp_queue ~= seq;
-        assert(phase_run !is null);
-        
-        check_matched();
-        phase_run.drop_objection(this);
-    }
-
-    void check_matched() 
-    {
-        auto expected = req_queue[matched].transform();
-        
-        if (expected == rsp_queue[matched].phrase)
-        {
-            uvm_info("MATCHED", format("Scoreboard received expected response #%d", matched), UVM_LOW);
-            //uvm_info("REQUEST", format("%s", req_queue[$-1].phrase), UVM_LOW);
-            //uvm_info("RESPONSE", format("%s", rsp_queue[$-1].phrase), UVM_LOW);
-        }
-        else 
-        {
-            uvm_error("MISMATCHED", "Scoreboard received unmatched response");
-            writeln(expected, " != ", rsp_queue[matched].phrase);
-        }
-        
-        matched += 1;
-    }
-}
-
-class comp_driver: uvm_driver!(comp_item)
-{
-
-    mixin uvm_component_utils;
-    
-    comp_in_intf comp_in;
-    comp_out_intf comp_out;
-
-    this(string name, uvm_component parent = null) 
-    {
-        super(name, parent);
-        uvm_config_db!comp_in_intf.get(this, "", "comp_in", comp_in);
-        assert (comp_in !is null);
-    }
-
-    override void run_phase(uvm_phase phase)
-    {
-        super.run_phase(phase);
-        while (true) 
-        {
-            seq_item_port.try_next_item(req);
-
-            if (req !is null) 
+            if(trace !is null) 
             {
-                while (comp_out.solved == 0 || comp_in.reset == 1)
-                    wait (comp_in.clock.negedge());
-
-                wait (comp_in.clock.negedge());
-
-                comp_in.a_in = req.a_in;
-                comp_in.b_in = req.b_in;
-                
-                seq_item_port.item_done();
+                trace.dump(getSimTime().getVal());
+                trace.flush();
             }
-            else
-                wait (comp_in.clock.negedge());
         }
     }
 }
 
-class comp_seq: uvm_sequence!comp_item
+//Testbench module to instantiate Top
+class testbench: uvm_tb
 {
-    @UVM_DEFAULT 
-    { 
-        @rand uint seq_size;
-        
-        uint a, b;
+    Top top;
 
-        ubvec!3 phrase;
-    }
-
-    mixin uvm_object_utils;
-
-    this(string name="") 
+    override void initial()
     {
-        super(name);
-        req = comp_item.type_id.create(name ~ ".req");
-    }
-
-    constraint! q{
-        seq_size < 200;
-        seq_size > 16;
-    } seq_size_cst;
+        //Connecting the driver and monitor to interface
+        uvm_config_db!(intf).set(null, "uvm_test_top.comp_env.comp_agent.comp_driver", "vif", top.vif);
+        uvm_config_db!(intf).set(null, "uvm_test_top.comp_env.comp_agent.comp_monitor", "vif", top.vif);
     
-    override void body() 
-    {
-        for (size_t i=0; i!=seq_size; ++i)
-        {
-            wait_for_grant();
-            req.randomize();
-            
-            comp_item cloned = cast(comp_item) req.clone;
-            
-            send_request(cloned);
-        }
-    }
-
-    void set_phrase(comp_item item)
-    {
-        phrase = (item.less_than ~ item.equal_to ~ item.greater_than);
-    }
-
-    ubvec!3[] transform() 
-    {
-        ubvec!3[] retval;
-        ubvec!1 less_than, equal_to, greater_than;
-        
-        less_than = (a < b);
-        equal_to = (a == b);
-        greater_than = (a > b);
-
-        retval ~= (less_than ~ equal_to ~ greater_than);
-
-        return retval;
+        uvm_info("TESTBENCH", "Tetsbench has been initialized", UVM_HIGH);
     }
 }
 
-class comp_item: uvm_sequence_item
+//Main function that actually starts the testbench
+void main(string[] args)
 {
-    mixin uvm_object_utils;
+    import std.stdio;
 
-    @UVM_DEFAULT 
-    { 
-        @rand uint a_in, b_in; 
+    uint seed;
 
-        ubvec!1 less_than, equal_to, greater_than, solved;
+    CommandLine cmdl = new CommandLine(args);
 
-        //ubvec!3 phrase = (less_than ~ equal_to ~ greater_than);
-    }
-    
-    this(string name = "comp_item") { super(name); }
+    if(cmdl.plusArgs("seed = " ~ "%d", seed)) writeln("Using random seed: %d", seed);
+    else seed = 1;
 
-    constraint! q{
-        a_in < 256;
-        b_in < 256;
+    auto tb = new testbench;
 
-        a_in > 0;
-        b_in > 0;
-    } input_cst;
+    tb.multicore(0, 1);
+    tb.elaborate("tb", args);
+    tb.set_seed(seed);
+    tb.start();
 }
