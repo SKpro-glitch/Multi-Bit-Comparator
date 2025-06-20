@@ -51,8 +51,8 @@ class seq: uvm_sequence!(item)
 {
     mixin uvm_object_utils;
 
-    item comp = item.type_id.create("comp");
-
+    item comp;
+    
     //Mandatory constructor, no parent for Objects
     this(string name="") { super(name); }
 
@@ -73,12 +73,14 @@ class seq: uvm_sequence!(item)
     //Their names should not be changed
     override void body()
     {
+        comp = item.type_id.create("comp");
+
         for(int i=0; i<n; i++)
         {
             wait_for_grant();
             comp.randomize();
 
-            uvm_info("SEQ", format("Generated Item No. ", i), UVM_HIGH);
+            uvm_info("SEQ", format("Generated Item No. %d", i), UVM_HIGH);
 
             /** 
              * Cloning of item is not necessary
@@ -90,7 +92,7 @@ class seq: uvm_sequence!(item)
             send_request(cloned);
         }
 
-        uvm_info("SEQ", format(n, " ITEMS GENERATED"), UVM_LOW);
+        uvm_info("SEQ", format("%d ITEMS GENERATED", n), UVM_LOW);
     }
 }
 
@@ -185,7 +187,7 @@ class driver: uvm_driver!(item)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Monitor
 //Fetches and reads output from the DUT
-class monitor: uvm_monitor//!(item)
+class monitor: uvm_monitor
 {
     mixin uvm_component_utils;
 
@@ -210,6 +212,8 @@ class monitor: uvm_monitor//!(item)
     //The build_phase function is more customizable than UVM_BUILD
     //override void build_phase(uvm_phase phase) {}
 
+    item comp;
+
     override void run_phase(uvm_phase phase)
     {
         super.run_phase(phase);
@@ -224,23 +228,26 @@ class monitor: uvm_monitor//!(item)
              This can also be put inside a loop if needed
              */
             
-            //Instantiating new item to fetch the values from interface
-            item comp = item.type_id.create("comp");
+            //if(vif.solved)
+            {
+                //Instantiating new item to fetch the values from interface
+                comp = item.type_id.create("comp");
 
-            //Reading the input values for reference
-            comp.a = vif.a_in;
-            comp.b = vif.b_in;
+                //Reading the input values for reference
+                comp.a = vif.a_in;
+                comp.b = vif.b_in;
 
-            //Reading the output values for checking
-            comp.less_than = vif.less_than;
-            comp.greater_than = vif.greater_than;
-            comp.equal_to = vif.equal_to;
+                //Reading the output values for checking
+                comp.less_than = vif.less_than;
+                comp.greater_than = vif.greater_than;
+                comp.equal_to = vif.equal_to;
 
-            //Printing item for reference and manual verification
-            uvm_info("MONITOR", comp.sprint(), UVM_LOW);
+                //Printing item for reference and manual verification
+                uvm_info("MONITOR", comp.sprint(), UVM_LOW);
 
-            //Writing the item to the scoreboard for checking
-            mon_analysis_port.write(comp);
+                //Writing the item to the scoreboard for checking
+                mon_analysis_port.write(comp);
+            }
         }
     }
 }
@@ -307,7 +314,7 @@ class scoreboard: uvm_scoreboard
         uint a = comp.a, b = comp.b;
 
         //Printing expected values
-        uvm_info("SCOREBOARD", "Expected: \n less_than = ", (a<b), "\n greater_than = ", (a>b), "\n equal_to = ", (a==b), UVM_LOW);
+        //uvm_info("SCOREBOARD", format("Expected: \n less_than = %d\n greater_than = %d\n equal_to = ", (a<b),(a>b),(a==b)), UVM_LOW);
         
         //Actual checking of output values by comparing with expected values
         if(comp.less_than == (a<b) && comp.greater_than == (a>b) && comp.equal_to == (a==b))
@@ -370,6 +377,7 @@ class test: uvm_test
         comp_env = env.type_id.create("comp_env", this);
 
         uvm_info("TEST", "Test is done building", UVM_HIGH);
+        writeln("Test is done building");
     }
     
     override void run_phase(uvm_phase phase)
@@ -432,6 +440,8 @@ class Top: Entity
     //Closing Verilated trace
     void closetrace()
     {
+        writeln("Closing trace");
+
         if(trace !is null)
         {
             trace.close();
@@ -444,6 +454,8 @@ class Top: Entity
     //Connecting the Interface to the Design 
     override void doConnect()
     {
+        writeln("Connecting Interface to Design");
+        
         //Clock
         vif.clock(clock);
 
@@ -457,8 +469,11 @@ class Top: Entity
         vif.greater_than(dut.greater_than);
         vif.equal_to(dut.equal_to);
         vif.solved(dut.solved);
+        
     
-        uvm_info("TOP", "Interface is connected to Design", UVM_HIGH);
+       // uvm_info("TOP", "Interface is connected to Design", UVM_HIGH);
+        writeln("Interface is connected to Design");
+
     }
 
     //Building the verilated design file
@@ -467,6 +482,8 @@ class Top: Entity
         dut = new DVMulti_Bit_Comparator_PowerGated();
         traceEverOn(true);
         opentrace("Multi_Bit_Comparator_PowerGated.vcd");
+
+        writeln("Test is built");
     }
 
     Task!stimulateClock stimulateClockTask;
@@ -506,6 +523,8 @@ class testbench: uvm_tb
 
     override void initial()
     {
+        writeln("Testbench started");
+
         //Connecting the driver and monitor to interface
         uvm_config_db!(intf).set(null, "uvm_test_top.comp_env.comp_agent.comp_driver", "vif", top.vif);
         uvm_config_db!(intf).set(null, "uvm_test_top.comp_env.comp_agent.comp_monitor", "vif", top.vif);
@@ -529,7 +548,14 @@ void main(string[] args)
     auto tb = new testbench;
 
     tb.multicore(0, 1);
+    writeln("Multicore works");
+
     tb.elaborate("tb", args);
+    writeln("Elaborate works");
+
     tb.set_seed(seed);
+    writeln("Seed works");
+
     tb.start();
+    writeln("Testbench started");
 }

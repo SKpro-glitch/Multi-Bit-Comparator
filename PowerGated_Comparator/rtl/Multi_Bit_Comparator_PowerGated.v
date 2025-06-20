@@ -45,7 +45,7 @@ module Multi_Bit_Comparator_PowerGated #(parameter n=7) (
     assign less_than = |less;
     assign greater_than = |greater;
     assign equal_to = equal[0];
-    assign solved = (less_than | greater_than | equal_to);
+    assign solved = (less_than ^ greater_than ^ equal_to);
 
 endmodule
 
@@ -59,7 +59,7 @@ module Single_Bit_Comparator_PowerGated (
     //This is a combinational circuit
     //The enable line assists in power gating as this module will be duplicated in the top module
     
-    always @ (enable) begin
+    always @ (enable | reset) begin
         if(reset) {less_than, equal_to, greater_than} = 3'b000;
         else begin
             if(a^b) {less_than, equal_to, greater_than} = {b, 1'b0, a};
