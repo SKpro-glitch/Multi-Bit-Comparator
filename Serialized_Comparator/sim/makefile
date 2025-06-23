@@ -18,7 +18,7 @@ clean:
 	rm -rf Serialized_Comparator* euvm_dir obj_dir verilator.stamp
 
 run: Serialized_Comparator
-	./Serialized_Comparator +UVM_TESTNAME=Serialized_Comparator.test +UVM_VERBOSITY=$(VERBOSITY) +seed=$(SEED) # +UVM_OBJECTION_TRACE
+	./Serialized_Comparator +UVM_TESTNAME=Test.test +UVM_VERBOSITY=$(VERBOSITY) +seed=$(SEED) # +UVM_OBJECTION_TRACE
 
 verilator.stamp: ../rtl/Serialized_Comparator.v
 	touch verilator.stamp
@@ -32,6 +32,16 @@ euvm_dir/VSerialized_Comparator_euvm.d euvm_dir/VSerialized_Comparator_euvm_func
 
 
 Serialized_Comparator: ../testbench/Serialized_Comparator.d \
+		../testbench/Item.d \
+		../testbench/Sequencer.d \
+		../testbench/Sequence.d \
+		../testbench/Interface.d \
+		../testbench/Driver.d \
+		../testbench/Monitor.d \
+		../testbench/Agent.d \
+		../testbench/Scoreboard.d \
+		../testbench/Environment.d \
+		../testbench/Test.d \
 	   euvm_dir/VSerialized_Comparator_euvm.d  \
 	   $(LDC2BINDIR)/../import/esdl/intf/verilator/trace.d \
 	   euvm_dir/verilated_vcd_d.o euvm_dir/verilated_d.o \
@@ -43,4 +53,4 @@ Serialized_Comparator: ../testbench/Serialized_Comparator.d \
 		-L-lphobos2-ldc-shared -L-ldl $^ -L-lstdc++
 
 run_overide: Serialized_Comparator
-	./Serialized_Comparator +UVM_TESTNAME=Serialized_Comparator.test +UVM_VERBOSITY=$(VERBOSITY) +seed=$(SEED) +UVM_SET_TYPE_OVERRIDE=Serialized_Comparator.item # +UVM_OBJECTION_TRACE
+	./Serialized_Comparator +UVM_TESTNAME=Test.test +UVM_VERBOSITY=$(VERBOSITY) +seed=$(SEED) +UVM_SET_TYPE_OVERRIDE=Item.item # +UVM_OBJECTION_TRACE

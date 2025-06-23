@@ -5,6 +5,7 @@ import uvm;
 import std.stdio;
 import std.string: format;
 
+/**
 //Item
 // This is the base transaction object that will be used in the environment to initiate new transactions and capture transactions at DUT interface
 class item: uvm_sequence_item
@@ -29,6 +30,7 @@ class item: uvm_sequence_item
     constraint! q{} comp_constraints;
 }
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Sequencer
 //The sequencer is a mediator who establishes a connection between sequence and driver
 class sequencer: uvm_sequencer!item
@@ -58,11 +60,10 @@ class seq: uvm_sequence!(item)
 
     //Number of sequences
     @rand int n; 
-    /** 
-     * Can be randomized also, fixed also
-     It is randomized when applicable in multi-cycle designs, or data streams
-     Example: FIFO, Avalon stream etc.
-     */
+
+    //Can be randomized also, fixed also
+    //It is randomized when applicable in multi-cycle designs, or data streams
+    //Example: FIFO, Avalon stream etc.
 
     constraint! q{
         n > 5;
@@ -82,12 +83,11 @@ class seq: uvm_sequence!(item)
 
             uvm_info("SEQ", format("Generated Item No. %d", i), UVM_HIGH);
 
-            /** 
-             * Cloning of item is not necessary
-             It is useful when making a reference model
-             Cloned item is sent to driver and Original is sent to scoreboard
-             No reference model made here
-             */
+            //Cloning of item is not necessary
+            //It is useful when making a reference model
+            //Cloned item is sent to driver and Original is sent to scoreboard
+            //No reference model made here
+            
             item cloned = cast(item) comp.clone;
             send_request(cloned);
         }
@@ -223,11 +223,10 @@ class monitor: uvm_monitor
             //Waiting 2 clock cycles - 1 for reset, 1 for input
             wait(vif.clock.posedge());
             wait(vif.clock.posedge());
-            /** 
-             * Synchronization of clock cycles is design specific
-             This can also be put inside a loop if needed
-             */
             
+            //Synchronization of clock cycles is design specific
+            //This can also be put inside a loop if needed
+             
             //if(vif.solved)
             {
                 //Instantiating new item to fetch the values from interface
@@ -406,6 +405,9 @@ class test: uvm_test
         phase.drop_objection(this);
     }
 }
+*/
+
+import Interface;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Top
