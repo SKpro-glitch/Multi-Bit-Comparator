@@ -46,36 +46,39 @@ class driver: uvm_driver!(item)
         {
             uvm_info("DRIVER", "Driver is running", UVM_HIGH);
 
-            //Waiting one clock cycle before resetting again 
-            wait(vif.clock.posedge());
-            
             //Fetching an item and storing it in allocated memory
             seq_item_port.get_next_item(req);
             //The item 'req' is a built-in item which takes the value of the item originally passed as argument to the UVM class
 
             uvm_info(get_type_name(), "Got new item", UVM_MEDIUM);
 
+            //Waiting one clock cycle before resetting again 
+            wait(vif.clock.posedge());
+            
             //Actual driving of them inputs
             //This can be written in another function and called also
             
             if(vif.solved)
             {
-            //Design-specific requirement: The design must be reset before every new input
-            vif.reset = true;
+                //Design-specific requirement: The design must be reset before every new input
+                vif.reset = true;
 
-            //One clock cycle is needed for the reset to be evaluated
-            wait(vif.clock.posedge());
-            
-            //Setting the active-high reset back to low and passing the inputs
-            vif.reset = false;
-            vif.a_in = req.a;
-            vif.b_in = req.b;
+                //One clock cycle is needed for the reset to be evaluated
+                wait(vif.clock.posedge());
+            }
 
-            uvm_info("DRIVER", "Inputs have been provided", UVM_MEDIUM);
-            
+            if(vif.reset)
+            {
+                //Setting the active-high reset back to low and passing the inputs
+                vif.reset = false;
+                vif.a_in = req.a;
+                vif.b_in = req.b;
+
+                uvm_info("DRIVER", "Inputs have been provided", UVM_MEDIUM);
+            }
+
             //Declaring the item as done so that it can proceed to the next step
             seq_item_port.item_done();
-            }
         }
     }
 }
