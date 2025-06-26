@@ -84,18 +84,19 @@ class Top: Entity
         clock = false;
 
         //Clock can be set to run for a fixed number of cycles
-        for(size_t i=0; i<100; i++)
+        //for(size_t i=0; i<50; i++)
+        while(true)
         {
             clock = false;
             dut.clock = false;
 
-            wait(5.nsec);
+            wait(10.nsec);
             dut.eval();
             if(trace !is null) trace.dump(getSimTime().getVal());
 
             clock = true;
             dut.clock = true;
-            wait(5.nsec);
+            wait(10.nsec);
             dut.eval();
 
             if(trace !is null) 

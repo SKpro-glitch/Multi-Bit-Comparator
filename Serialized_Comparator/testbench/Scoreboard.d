@@ -33,8 +33,11 @@ class scoreboard: uvm_scoreboard
         //Reassigning varialble names for simplicity of coding
         uint a = comp.a, b = comp.b;
 
+        //Printing item for reference and manual verification
+        uvm_info("SCOREBOARD", comp.sprint(), UVM_LOW);
+
         //Printing expected values
-        //uvm_info("SCOREBOARD", format("Expected: \n less_than = ", (a<b), "\n greater_than = ", (a>b), "\n equal_to = ", (a==b)), UVM_LOW);
+        uvm_info("SCOREBOARD", format("Expected: \n less_than = %d\n greater_than = %d\n equal_to = %d", (a<b), (a>b), (a==b)), UVM_LOW);
         
         //Actual checking of output values by comparing with expected values
         if(comp.less_than == (a<b) && comp.greater_than == (a>b) && comp.equal_to == (a==b))

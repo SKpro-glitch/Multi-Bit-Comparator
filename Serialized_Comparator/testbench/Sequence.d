@@ -18,7 +18,7 @@ class seq: uvm_sequence!(item)
     item comp;
     
     //Mandatory constructor, no parent for Objects
-    this(string name="") { super(name); }
+    this(string name="Obj") { super(name); }
 
     //Number of sequences
     int n=5;
@@ -33,7 +33,7 @@ class seq: uvm_sequence!(item)
     constraint! q{
         n > 5;
         n < 10;
-    } seq_constraint;
+    } seq_constraint;0: tb.uvm_dock.root.uvm_test_top.comp_env.comp_scoreboard [MATCHED] Compa
     */
 
     //Functions that need to be overridden are in-built
@@ -45,6 +45,9 @@ class seq: uvm_sequence!(item)
         for(int i=0; i<n; i++)
         {
             wait_for_grant();
+            //Alternate for wait_for_grant()
+            //start_item(cloned);
+
             comp.randomize();
 
             uvm_info("SEQ", format("Generated Item No. %d", i), UVM_HIGH);
@@ -57,6 +60,9 @@ class seq: uvm_sequence!(item)
              */
             item cloned = cast(item) comp.clone;
             send_request(cloned);
+        
+            //Aternate for send_request(cloned);
+            //finish_item(cloned);
         }
 
         uvm_info("SEQ", format("%d ITEMS GENERATED", n), UVM_LOW);

@@ -52,31 +52,29 @@ class driver: uvm_driver!(item)
 
             uvm_info(get_type_name(), "Got new item", UVM_MEDIUM);
 
-            //Waiting one clock cycle before resetting again 
+            //Waiting one clock cycle before resetting 
+            wait(vif.clock.posedge());
+            
+            //Design-specific requirement: The design must be reset before every new input
+            vif.reset = true;
+
+            //Waiting one clock cycle before giving input 
             wait(vif.clock.posedge());
             
             //Actual driving of them inputs
             //This can be written in another function and called also
             
-            if(vif.solved)
-            {
-                //Design-specific requirement: The design must be reset before every new input
-                vif.reset = true;
+            //Setting the active-high reset back to low and passing the inputs
+            vif.reset = false;
+            vif.a_in = req.a;
+            vif.b_in = req.b;
 
-                //One clock cycle is needed for the reset to be evaluated
-                wait(vif.clock.posedge());
-            }
+            uvm_info("DRIVER", "Inputs have been provided", UVM_MEDIUM);
 
-            if(vif.reset)
-            {
-                //Setting the active-high reset back to low and passing the inputs
-                vif.reset = false;
-                vif.a_in = req.a;
-                vif.b_in = req.b;
-
-                uvm_info("DRIVER", "Inputs have been provided", UVM_MEDIUM);
-            }
-
+            //Waiting until current input is solved before generating next input
+            while(!vif.solved)
+            { wait(vif.clock.posedge()); }
+            
             //Declaring the item as done so that it can proceed to the next step
             seq_item_port.item_done();
         }

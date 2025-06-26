@@ -19,7 +19,7 @@ class monitor: uvm_monitor
     mixin uvm_component_utils;
 
     intf vif;
-
+    item comp;
     //The UVM_BIULD syntax simplifies and automates the build phase
     //Useful for simple things like ports
     @UVM_BUILD
@@ -43,18 +43,18 @@ class monitor: uvm_monitor
     {
         super.run_phase(phase);
 
-            //Instantiating new item to fetch the values from interface
-            item comp = item.type_id.create("comp");
+            //Instantiating new item to fetch the[DRIVER]     8 values from interface
 
+        comp = item.type_id.create("comp");
         while(true)
         {
-            //Waiting 2 clock cycles - 1 for reset, 1 for input
-            wait(vif.clock.posedge());
-            wait(vif.clock.posedge());
             /** 
              * Synchronization of clock cycles is design specific
              This can also be put inside a loop if needed
              */
+            
+            //Checking for solved at each clock cycle
+            wait(vif.clock.posedge());
             
             if(vif.solved)
             {
@@ -67,8 +67,7 @@ class monitor: uvm_monitor
                 comp.greater_than = vif.greater_than;
                 comp.equal_to = vif.equal_to;
 
-                //Printing item for reference and manual verification
-                uvm_info("MONITOR", comp.sprint(), UVM_LOW);
+                uvm_info("MONITOR", "Output values obtained", UVM_LOW);
 
                 //Writing the item to the scoreboard for checking
                 mon_analysis_port.write(comp);

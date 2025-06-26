@@ -48,14 +48,14 @@ class test: uvm_test
         uvm_info("TEST", "Test has started", UVM_MEDIUM);
         
         //Sequence is randomized
-        comp_seq.randomize();
+        //comp_seq.randomize();
         
         //Setting the path for the sequence to start: Environment -> Agent -> Sequencer
         comp_seq.start(comp_env.comp_agent.comp_sequencer);
 
-        uvm_info("TEST", "Test is complete", UVM_MEDIUM);
-
         //Object is killed
         phase.drop_objection(this);
+        
+        uvm_info("TEST", "Test is complete", UVM_MEDIUM);
     }
 }
